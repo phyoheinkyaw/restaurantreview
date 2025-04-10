@@ -1,0 +1,20 @@
+:root {
+    /* Main Colors */
+    --primary: #ea9e0b;     /* Golden yellow - Main brand color */
+    --secondary: #dd1840;   /* Deep red - Secondary actions */
+    --success: #2dc2a3;     /* Teal - Success states */
+    --warning: #f6b83c;     /* Light orange - Warnings */
+    --danger: #e93559;      /* Bright red - Error states */
+    --info: #5ad8bf;        /* Light teal - Information */
+    --accent: #8af3ff;      /* Light blue - Accent elements */
+    
+    /* Text Colors */
+    --text-dark: #333333;
+    --text-light: #ffffff;
+    --text-muted: #6c757d;
+    
+    /* Background Colors */
+    --bg-light: #ffffff;
+    --bg-dark: #212529;
+    --bg-muted: #f8f9fa;
+} 

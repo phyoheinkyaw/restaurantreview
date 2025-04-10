@@ -1,0 +1,119 @@
+<div class="admin-sidebar">
+    <div class="sidebar-header">
+        <a href="index.php" class="sidebar-brand">
+            <i class="fas fa-utensils text-primary me-2"></i>
+            <span>Restaurant Review</span>
+        </a>
+    </div>
+    
+    <div class="sidebar-content">
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a href="index.php" class="nav-link">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="restaurants.php" class="nav-link">
+                    <i class="fas fa-store"></i>
+                    <span>Restaurants</span>
+                    <span class="badge bg-primary rounded-pill ms-auto">12</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="users.php" class="nav-link">
+                    <i class="fas fa-users"></i>
+                    <span>Users</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#reviewsSubmenu" data-bs-toggle="collapse" class="nav-link">
+                    <i class="fas fa-star"></i>
+                    <span>Reviews</span>
+                    <i class="fas fa-chevron-down ms-auto small"></i>
+                </a>
+                <ul class="collapse nav flex-column ms-4" id="reviewsSubmenu">
+                    <li class="nav-item">
+                        <a href="reviews.php" class="nav-link">
+                            <i class="fas fa-list-ul"></i>
+                            <span>All Reviews</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="manage_reviews.php" class="nav-link">
+                            <i class="fas fa-th-large"></i>
+                            <span>Detailed View</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="nav-item">
+                <a href="#reservationsSubmenu" data-bs-toggle="collapse" class="nav-link">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Reservations</span>
+                    <i class="fas fa-chevron-down ms-auto small"></i>
+                </a>
+                <ul class="collapse nav flex-column ms-4" id="reservationsSubmenu">
+                    <li class="nav-item">
+                        <a href="reservations.php" class="nav-link">
+                            <i class="fas fa-list-ul"></i>
+                            <span>All Reservations</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="reservations.php?status=pending" class="nav-link">
+                            <i class="fas fa-clock"></i>
+                            <span>Pending</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="reservations.php?status=confirmed" class="nav-link">
+                            <i class="fas fa-check"></i>
+                            <span>Confirmed</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="reservation_calendar.php" class="nav-link">
+                            <i class="fas fa-calendar-week"></i>
+                            <span>Calendar View</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="nav-header">
+                <span>Administration</span>
+            </li>
+            <li class="nav-item">
+                <a href="settings.php" class="nav-link">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="reports.php" class="nav-link">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Reports</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="logs.php" class="nav-link">
+                    <i class="fas fa-list"></i>
+                    <span>Logs</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="sidebar-footer">
+        <div class="px-3 py-2">
+            <a href="../index.php" class="btn btn-outline-light btn-sm w-100">
+                <i class="fas fa-globe me-2"></i>
+                <span>View Website</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile overlay -->
+<div class="admin-content-overlay"></div> 

@@ -1,0 +1,531 @@
+/* Admin Panel Styles */
+:root {
+    /* Using the same color scheme as the main site */
+    --primary: #ea9e0b;     /* Golden yellow - Main brand color */
+    --secondary: #dd1840;   /* Deep red - Secondary actions */
+    --success: #2dc2a3;     /* Teal - Success states */
+    --warning: #f6b83c;     /* Light orange - Warnings */
+    --danger: #e93559;      /* Bright red - Error states */
+    --info: #5ad8bf;        /* Light teal - Information */
+    --accent: #8af3ff;      /* Light blue - Accent elements */
+    
+    /* Text Colors */
+    --text-dark: #333333;
+    --text-light: #ffffff;
+    --text-muted: #6c757d;
+    
+    /* Background Colors */
+    --bg-light: #ffffff;
+    --bg-dark: #212529;
+    --bg-muted: #f8f9fa;
+    --bg-sidebar: #2c3e50;
+    --bg-sidebar-active: #34495e;
+    
+    /* Sidebar Width */
+    --sidebar-width: 250px;
+    --sidebar-collapsed-width: 70px;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f5f5f5;
+    color: var(--text-dark);
+    overflow-x: hidden;
+    position: relative;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+/* Wrapper for admin layout */
+.admin-wrapper {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+    position: relative;
+}
+
+/* Sidebar styles */
+.admin-sidebar {
+    background-color: var(--bg-sidebar);
+    color: var(--text-light);
+    height: 100vh;
+    width: var(--sidebar-width);
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 1030;
+    transition: all 0.3s ease;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-sidebar.collapsed {
+    width: var(--sidebar-collapsed-width);
+}
+
+.admin-sidebar .sidebar-header {
+    padding: 20px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-sidebar .sidebar-header img {
+    max-width: 150px;
+}
+
+.admin-sidebar .sidebar-brand {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-light);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-sidebar.collapsed .sidebar-brand span {
+    display: none;
+}
+
+.admin-sidebar .sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.admin-sidebar .nav-header {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 1.5rem 1.5rem 0.5rem;
+}
+
+.admin-sidebar.collapsed .nav-header {
+    display: none;
+}
+
+.admin-sidebar .nav-link {
+    color: rgba(255, 255, 255, 0.8);
+    padding: 12px 20px;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.admin-sidebar .nav-link i {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+    font-size: 1.1rem;
+}
+
+.admin-sidebar.collapsed .nav-link span {
+    display: none;
+}
+
+.admin-sidebar .nav-link:hover,
+.admin-sidebar .nav-link.active {
+    background-color: var(--bg-sidebar-active);
+    color: var(--text-light);
+}
+
+.admin-sidebar .nav-link .badge {
+    margin-left: auto;
+}
+
+.admin-sidebar.collapsed .nav-link .badge {
+    display: none;
+}
+
+.admin-sidebar .sidebar-footer {
+    padding: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-sidebar.collapsed .sidebar-footer span {
+    display: none;
+}
+
+/* Main content area */
+.admin-content {
+    flex: 1;
+    margin-left: var(--sidebar-width);
+    transition: margin-left 0.3s ease;
+    min-height: 100vh;
+    width: calc(100% - var(--sidebar-width));
+    position: relative;
+}
+
+.admin-content.expanded {
+    margin-left: var(--sidebar-collapsed-width);
+    width: calc(100% - var(--sidebar-collapsed-width));
+}
+
+/* Admin navbar */
+.admin-navbar {
+    background-color: var(--bg-light);
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    padding: 12px 20px;
+    margin-bottom: 20px;
+    border-radius: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+}
+
+.sidebar-toggle {
+    background: none;
+    border: none;
+    color: var(--text-dark);
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+.admin-navbar .search-form {
+    max-width: 300px;
+}
+
+.admin-navbar .admin-profile {
+    display: flex;
+    align-items: center;
+}
+
+.admin-navbar .admin-profile img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.admin-navbar .dropdown-menu {
+    min-width: 200px;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    border: none;
+}
+
+/* Dashboard cards */
+.dashboard-card {
+    background-color: var(--bg-light);
+    border-radius: 10px;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: all 0.3s;
+}
+
+.dashboard-card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    transform: translateY(-3px);
+}
+
+.dashboard-card .card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+}
+
+.dashboard-card .card-title {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 5px;
+    color: var(--text-muted);
+}
+
+.dashboard-card .card-value {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0;
+}
+
+.dashboard-card .card-trend {
+    font-size: 0.8rem;
+    margin-top: 10px;
+}
+
+.dashboard-card .card-trend.up {
+    color: var(--success);
+}
+
+.dashboard-card .card-trend.down {
+    color: var(--danger);
+}
+
+/* Charts and tables */
+.chart-container {
+    background-color: var(--bg-light);
+    border-radius: 10px;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.chart-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: var(--text-dark);
+}
+
+.data-table {
+    background-color: var(--bg-light);
+    border-radius: 10px;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.data-table-header {
+    background-color: #f5f5f5;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.data-table-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0;
+    color: var(--text-dark);
+}
+
+.data-table table {
+    margin-bottom: 0;
+}
+
+.data-table .table th {
+    font-weight: 500;
+    color: var(--text-muted);
+    border-top: none;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+}
+
+/* DataTable fixes */
+.data-table {
+    overflow-x: hidden;
+    padding: 1rem;
+}
+
+.data-table .table {
+    width: 100% !important;
+    table-layout: auto;
+}
+
+.dataTables_wrapper {
+    width: 100%;
+    overflow-x: hidden;
+}
+
+.dataTables_scrollBody {
+    overflow-x: hidden !important;
+}
+
+/* Make sure table cells don't break layout */
+.data-table .table td,
+.data-table .table th {
+    white-space: normal;
+    word-break: break-word;
+    max-width: none;
+    width: auto;
+}
+
+/* First column (usually name/title) can be a bit wider */
+.data-table .table td:first-child,
+.data-table .table th:first-child {
+    min-width: 150px;
+}
+
+/* Action column (usually last) should be compact */
+.data-table .table td:last-child,
+.data-table .table th:last-child {
+    width: 80px;
+    min-width: 80px;
+    white-space: nowrap;
+}
+
+/* Ensure action buttons/dropdowns don't cause overflow */
+.data-table .dropdown {
+    position: relative;
+}
+
+.data-table .dropdown-menu {
+    position: absolute;
+    right: 0;
+    left: auto;
+}
+
+/* Responsive styles */
+@media (max-width: 992px) {
+    :root {
+        --sidebar-width: var(--sidebar-collapsed-width);
+    }
+    
+    .admin-sidebar {
+        width: var(--sidebar-collapsed-width);
+    }
+    
+    .admin-sidebar .sidebar-brand span,
+    .admin-sidebar .nav-link span,
+    .admin-sidebar .nav-link .badge,
+    .admin-sidebar .nav-header,
+    .admin-sidebar .sidebar-footer span {
+        display: none;
+    }
+    
+    .admin-content {
+        margin-left: var(--sidebar-collapsed-width);
+        width: calc(100% - var(--sidebar-collapsed-width));
+    }
+    
+    .admin-sidebar.expanded {
+        width: var(--sidebar-width);
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .admin-sidebar.expanded .sidebar-brand span,
+    .admin-sidebar.expanded .nav-link span,
+    .admin-sidebar.expanded .nav-link .badge,
+    .admin-sidebar.expanded .nav-header,
+    .admin-sidebar.expanded .sidebar-footer span {
+        display: inline-block;
+    }
+}
+
+@media (max-width: 768px) {
+    :root {
+        --sidebar-width: 250px;
+        --sidebar-collapsed-width: 0;
+    }
+    
+    .admin-sidebar {
+        transform: translateX(-100%);
+        width: var(--sidebar-width);
+        box-shadow: none;
+        z-index: 1040;
+    }
+    
+    .admin-sidebar.collapsed {
+        transform: translateX(-100%);
+    }
+    
+    .admin-sidebar.expanded {
+        transform: translateX(0);
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .admin-sidebar .sidebar-brand span,
+    .admin-sidebar .nav-link span,
+    .admin-sidebar .nav-link .badge,
+    .admin-sidebar .nav-header,
+    .admin-sidebar .sidebar-footer span {
+        display: inline-block;
+    }
+    
+    .admin-content,
+    .admin-content.expanded {
+        margin-left: 0;
+        width: 100%;
+    }
+    
+    .admin-content-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1030;
+    }
+    
+    .admin-content-overlay.show {
+        display: block;
+    }
+}
+
+/* Status badge styles */
+.status-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.status-badge.active {
+    background-color: rgba(45, 194, 163, 0.1);
+    color: var(--success);
+}
+
+.status-badge.pending {
+    background-color: rgba(246, 184, 60, 0.1);
+    color: var(--warning);
+}
+
+.status-badge.declined {
+    background-color: rgba(233, 53, 89, 0.1);
+    color: var(--danger);
+}
+
+/* Color utility classes for card icons */
+.bg-primary-light {
+    background-color: rgba(234, 158, 11, 0.1);
+}
+
+.bg-secondary-light {
+    background-color: rgba(221, 24, 64, 0.1);
+}
+
+.bg-success-light {
+    background-color: rgba(45, 194, 163, 0.1);
+}
+
+.bg-warning-light {
+    background-color: rgba(246, 184, 60, 0.1);
+}
+
+.bg-danger-light {
+    background-color: rgba(233, 53, 89, 0.1);
+}
+
+.bg-info-light {
+    background-color: rgba(90, 216, 191, 0.1);
+}
+
+.text-primary {
+    color: var(--primary) !important;
+}
+
+.text-secondary {
+    color: var(--secondary) !important;
+}
+
+.text-success {
+    color: var(--success) !important;
+}
+
+.text-warning {
+    color: var(--warning) !important;
+}
+
+.text-danger {
+    color: var(--danger) !important;
+}
+
+.text-info {
+    color: var(--info) !important;
+} 
