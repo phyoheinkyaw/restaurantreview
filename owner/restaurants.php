@@ -3,7 +3,214 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Include header and database connection
+// Include database connection
+require_once 'includes/db_connect.php';
+
+// Get owner information (this will also check if user is logged in)
+$sql = "SELECT * FROM users WHERE user_id = ? AND role = 'owner'";
+$stmt = $conn->prepare($sql);
+
+if (!$stmt) {
+    die("Database error: " . $conn->error);
+}
+
+$stmt->bind_param("i", $_SESSION['user_id']);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows === 0) {
+    header("Location: ../login.php");
+    exit;
+}
+
+$owner = $result->fetch_assoc();
+$stmt->close();
+
+// Helper function to check for pending reservations
+function hasPendingReservations($conn, $restaurant_id) {
+    $sql = "SELECT COUNT(*) as count FROM reservations 
+            WHERE restaurant_id = ? 
+            AND status IN ('pending', 'confirmed')";
+    $stmt = $conn->prepare($sql);
+    
+    if (!$stmt) {
+        return false;
+    }
+    
+    $stmt->bind_param("i", $restaurant_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if (!$result) {
+        return false;
+    }
+    
+    $row = $result->fetch_assoc();
+    $stmt->close();
+    return $row['count'] > 0;
+}
+
+// Handle restaurant status update
+if (isset($_GET['update_status'])) {
+    $restaurant_id = $_GET['restaurant_id'];
+    $status = $_GET['status'];
+    
+    // Check for pending reservations
+    if (hasPendingReservations($conn, $restaurant_id)) {
+        $_SESSION['status_message'] = 'Cannot change status: This restaurant has pending reservations.';
+        header("Location: restaurants.php");
+        exit;
+    }
+    
+    // Get restaurant name
+    $sql_name = "SELECT name FROM restaurants WHERE restaurant_id = ?";
+    $stmt_name = $conn->prepare($sql_name);
+    
+    if (!$stmt_name) {
+        $_SESSION['status_message'] = 'Database error: ' . $conn->error;
+        header("Location: restaurants.php");
+        exit;
+    }
+    
+    $stmt_name->bind_param("i", $restaurant_id);
+    $stmt_name->execute();
+    $result = $stmt_name->get_result();
+    
+    if (!$result) {
+        $_SESSION['status_message'] = 'Database error: ' . $conn->error;
+        header("Location: restaurants.php");
+        exit;
+    }
+    
+    $restaurant = $result->fetch_assoc();
+    $stmt_name->close();
+    
+    $sql = "UPDATE restaurants SET is_active = ? WHERE restaurant_id = ?";
+    $stmt = $conn->prepare($sql);
+    
+    if (!$stmt) {
+        $_SESSION['status_message'] = 'Database error: ' . $conn->error;
+        header("Location: restaurants.php");
+        exit;
+    }
+    
+    $stmt->bind_param("ii", $status, $restaurant_id);
+    $stmt->execute();
+    
+    if ($stmt->affected_rows > 0) {
+        $_SESSION['status_message'] = $status ? 
+            "Restaurant '{$restaurant['name']}' activated successfully!" : 
+            "Restaurant '{$restaurant['name']}' deactivated successfully!";
+    } else {
+        $_SESSION['status_message'] = 'Failed to update restaurant status.';
+    }
+    
+    $stmt->close();
+    header("Location: restaurants.php");
+    exit;
+}
+
+// Handle restaurant deletion
+if (isset($_GET['delete'])) {
+    $restaurant_id = $_GET['restaurant_id'];
+    
+    // Check for pending reservations
+    if (hasPendingReservations($conn, $restaurant_id)) {
+        $_SESSION['status_message'] = 'Cannot delete: This restaurant has pending reservations.';
+        header("Location: restaurants.php");
+        exit;
+    }
+    
+    // Get restaurant name for success message
+    $sql_name = "SELECT name FROM restaurants WHERE restaurant_id = ?";
+    $stmt_name = $conn->prepare($sql_name);
+    
+    if (!$stmt_name) {
+        $_SESSION['status_message'] = 'Database error: ' . $conn->error;
+        header("Location: restaurants.php");
+        exit;
+    }
+    
+    $stmt_name->bind_param("i", $restaurant_id);
+    $stmt_name->execute();
+    $result = $stmt_name->get_result();
+    
+    if (!$result) {
+        $_SESSION['status_message'] = 'Database error: ' . $conn->error;
+        header("Location: restaurants.php");
+        exit;
+    }
+    
+    $restaurant = $result->fetch_assoc();
+    $stmt_name->close();
+    
+    // Delete associated reviews first
+    $sql = "DELETE FROM reviews WHERE restaurant_id = ?";
+    $stmt = $conn->prepare($sql);
+    
+    if (!$stmt) {
+        $_SESSION['status_message'] = 'Database error: ' . $conn->error;
+        header("Location: restaurants.php");
+        exit;
+    }
+    
+    $stmt->bind_param("i", $restaurant_id);
+    $stmt->execute();
+    $stmt->close();
+    
+    // Delete associated reservations
+    $sql = "DELETE FROM reservations WHERE restaurant_id = ?";
+    $stmt = $conn->prepare($sql);
+    
+    if (!$stmt) {
+        $_SESSION['status_message'] = 'Database error: ' . $conn->error;
+        header("Location: restaurants.php");
+        exit;
+    }
+    
+    $stmt->bind_param("i", $restaurant_id);
+    $stmt->execute();
+    $stmt->close();
+    
+    // Delete associated waitlist entries
+    $sql = "DELETE FROM waitlist WHERE restaurant_id = ?";
+    $stmt = $conn->prepare($sql);
+    
+    if (!$stmt) {
+        $_SESSION['status_message'] = 'Database error: ' . $conn->error;
+        header("Location: restaurants.php");
+        exit;
+    }
+    
+    $stmt->bind_param("i", $restaurant_id);
+    $stmt->execute();
+    $stmt->close();
+    
+    // Finally delete the restaurant
+    $sql = "DELETE FROM restaurants WHERE restaurant_id = ?";
+    $stmt = $conn->prepare($sql);
+    
+    if (!$stmt) {
+        $_SESSION['status_message'] = 'Database error: ' . $conn->error;
+        header("Location: restaurants.php");
+        exit;
+    }
+    
+    $stmt->bind_param("i", $restaurant_id);
+    $stmt->execute();
+    
+    if ($stmt->affected_rows > 0) {
+        $_SESSION['status_message'] = "Restaurant '{$restaurant['name']}' deleted successfully!";
+    } else {
+        $_SESSION['status_message'] = 'Failed to delete restaurant.';
+    }
+    
+    $stmt->close();
+    header("Location: restaurants.php");
+    exit;
+}
+
+// Now include header and show the page
 require_once 'includes/header.php';
 
 // Get all restaurants owned by this owner
@@ -14,68 +221,16 @@ $sql = "SELECT r.*,
         WHERE r.owner_id = ?
         ORDER BY r.name";
 $stmt = $conn->prepare($sql);
+
+if (!$stmt) {
+    die("Error preparing statement: " . $conn->error);
+}
+
 $stmt->bind_param("i", $owner['user_id']);
 $stmt->execute();
 $restaurants = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
-// Handle restaurant deletion
-if (isset($_POST['delete_restaurant'])) {
-    $restaurant_id = $_POST['restaurant_id'];
-    
-    // Delete associated reviews and reservations first
-    $sql = "DELETE FROM reviews WHERE restaurant_id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $restaurant_id);
-    $stmt->execute();
-    $stmt->close();
-
-    $sql = "DELETE FROM reservations WHERE restaurant_id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $restaurant_id);
-    $stmt->execute();
-    $stmt->close();
-    
-    // Delete the restaurant
-    $sql = "DELETE FROM restaurants WHERE restaurant_id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $restaurant_id);
-    $stmt->execute();
-    $stmt->close();
-    
-    header("Location: restaurants.php");
-    exit;
-}
-
-// Handle restaurant status update
-if (isset($_POST['update_status'])) {
-    $restaurant_id = $_POST['restaurant_id'];
-    $status = $_POST['status'];
-    
-    $sql = "UPDATE restaurants SET is_active = ? WHERE restaurant_id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ii", $status, $restaurant_id);
-    $stmt->execute();
-    $stmt->close();
-    
-    header("Location: restaurants.php");
-    exit;
-}
-
-// Handle restaurant feature update
-if (isset($_POST['update_featured'])) {
-    $restaurant_id = $_POST['restaurant_id'];
-    $featured = $_POST['featured'];
-    
-    $sql = "UPDATE restaurants SET is_featured = ? WHERE restaurant_id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ii", $featured, $restaurant_id);
-    $stmt->execute();
-    $stmt->close();
-    
-    header("Location: restaurants.php");
-    exit;
-}
 ?>
 
 <div class="container-fluid p-4">
@@ -124,18 +279,28 @@ if (isset($_POST['update_featured'])) {
                                             <td><?php echo htmlspecialchars($restaurant['cuisine_type']); ?></td>
                                             <td><?php echo htmlspecialchars(substr($restaurant['address'], 0, 50) . (strlen($restaurant['address']) > 50 ? '...' : '')); ?></td>
                                             <td>
-                                                <span class="badge bg-info"><?php echo $restaurant['review_count']; ?></span>
+                                                <span class="badge bg-info">
+                                                    <a href="restaurant_reviews.php?id=<?php echo $restaurant['restaurant_id']; ?>" 
+                                                       class="text-white text-decoration-none">
+                                                        <?php echo $restaurant['review_count']; ?>
+                                                    </a>
+                                                </span>
                                             </td>
                                             <td>
-                                                <span class="badge bg-success"><?php echo $restaurant['reservation_count']; ?></span>
+                                                <span class="badge bg-success">
+                                                    <a href="restaurant_reservations.php?id=<?php echo $restaurant['restaurant_id']; ?>" 
+                                                       class="text-white text-decoration-none">
+                                                        <?php echo $restaurant['reservation_count']; ?>
+                                                    </a>
+                                                </span>
                                             </td>
                                             <td>
-                                                <form method="POST" class="d-inline">
+                                                <form method="GET" class="d-inline status-form">
+                                                    <input type="hidden" name="update_status" value="1">
                                                     <input type="hidden" name="restaurant_id" value="<?php echo $restaurant['restaurant_id']; ?>">
                                                     <input type="hidden" name="status" value="<?php echo isset($restaurant['is_active']) ? ($restaurant['is_active'] ? 0 : 1) : 0; ?>">
-                                                    <button type="submit" name="update_status" 
-                                                            class="btn btn-sm <?php echo isset($restaurant['is_active']) && $restaurant['is_active'] ? 'btn-success' : 'btn-danger'; ?>" 
-                                                            title="<?php echo isset($restaurant['is_active']) && $restaurant['is_active'] ? 'Active' : 'Inactive'; ?>">
+                                                    <button type="submit" 
+                                                            class="btn btn-sm <?php echo isset($restaurant['is_active']) && $restaurant['is_active'] ? 'btn-success' : 'btn-danger'; ?> status-btn">
                                                         <i class="fas <?php echo isset($restaurant['is_active']) && $restaurant['is_active'] ? 'fa-check' : 'fa-times'; ?>"></i>
                                                     </button>
                                                 </form>
@@ -143,22 +308,14 @@ if (isset($_POST['update_featured'])) {
                                             <td>
                                                 <div class="btn-group">
                                                     <a href="edit_restaurant.php?id=<?php echo $restaurant['restaurant_id']; ?>" 
-                                                       class="btn btn-sm btn-primary">
+                                                       class="btn btn-sm btn-primary me-2">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
-                                                    <form method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this restaurant?');">
+                                                    <form method="GET" class="d-inline delete-form">
+                                                        <input type="hidden" name="delete" value="1">
                                                         <input type="hidden" name="restaurant_id" value="<?php echo $restaurant['restaurant_id']; ?>">
-                                                        <button type="submit" name="delete_restaurant" class="btn btn-sm btn-danger">
+                                                        <button type="submit" class="btn btn-sm btn-danger delete-btn">
                                                             <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    </form>
-                                                    <form method="POST" class="d-inline">
-                                                        <input type="hidden" name="restaurant_id" value="<?php echo $restaurant['restaurant_id']; ?>">
-                                                        <input type="hidden" name="featured" value="<?php echo $restaurant['is_featured'] ? 0 : 1; ?>">
-                                                        <button type="submit" name="update_featured" 
-                                                                class="btn btn-sm <?php echo $restaurant['is_featured'] ? 'btn-warning' : 'btn-outline-warning'; ?>" 
-                                                                title="<?php echo $restaurant['is_featured'] ? 'Featured' : 'Not Featured'; ?>">
-                                                            <i class="fas <?php echo $restaurant['is_featured'] ? 'fa-star' : 'fa-star-o'; ?>"></i>
                                                         </button>
                                                     </form>
                                                 </div>
@@ -180,6 +337,57 @@ if (isset($_POST['update_featured'])) {
 <!-- Custom JS -->
 <script>
 $(document).ready(function() {
+    // Show status message if exists
+    <?php if (isset($_SESSION['status_message'])): ?>
+        <?php if (strpos($_SESSION['status_message'], 'Cannot') !== false): ?>
+            alertify.error("<?php echo $_SESSION['status_message']; ?>");
+        <?php else: ?>
+            alertify.success("<?php echo $_SESSION['status_message']; ?>");
+        <?php endif; ?>
+        <?php unset($_SESSION['status_message']); ?>
+    <?php endif; ?>
+
+    // Add confirmation dialog for status changes
+    $('.status-btn').click(function(e) {
+        e.preventDefault();
+        var form = $(this).closest('form');
+        var restaurantName = $(this).closest('tr').find('td:first-child span').text();
+        var newStatus = $(this).hasClass('btn-success') ? 'deactivate' : 'activate';
+        
+        var message = 'Are you sure you want to ' + newStatus + ' ' + restaurantName + '?';
+        
+        alertify.confirm(
+            'Confirm Status',
+            message,
+            function() {
+                form.submit();
+            },
+            function() {
+                alertify.error('Operation cancelled');
+            }
+        );
+    });
+
+    // Add confirmation dialog for deletion
+    $('.delete-btn').click(function(e) {
+        e.preventDefault();
+        var form = $(this).closest('form');
+        var restaurantName = $(this).closest('tr').find('td:first-child span').text();
+        
+        var message = 'Are you sure you want to delete ' + restaurantName + '?';
+        
+        alertify.confirm(
+            'Confirm Delete',
+            message,
+            function() {
+                form.submit();
+            },
+            function() {
+                alertify.error('Operation cancelled');
+            }
+        );
+    });
+
     $('.table').DataTable({
         responsive: true,
         pageLength: 10,

@@ -53,6 +53,19 @@ try {
         throw new Exception('Sorry, this time slot is fully booked');
     }
 
+    // Check if the slot is blocked
+    $stmt = $db->prepare("
+        SELECT * FROM blocked_slots
+        WHERE restaurant_id = ?
+        AND block_date = ?
+        AND ? >= block_time_start
+        AND ? < block_time_end
+    ");
+    $stmt->execute([$restaurant_id, $date, $time, $time]);
+    if ($stmt->fetch()) {
+        throw new Exception('Sorry, this time slot is unavailable due to maintenance or a private event.');
+    }
+
     // Create the reservation
     $stmt = $db->prepare("
         INSERT INTO reservations 

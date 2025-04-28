@@ -30,6 +30,7 @@ CREATE TABLE restaurants (
     longitude DECIMAL(11, 8),
     phone VARCHAR(20),
     email VARCHAR(100),
+    website VARCHAR(255),
     price_range ENUM('$', '$$', '$$$', '$$$$'),
     opening_hours JSON,
     image VARCHAR(255),
@@ -37,6 +38,7 @@ CREATE TABLE restaurants (
     is_wheelchair_accessible BOOLEAN DEFAULT FALSE,
     has_wifi BOOLEAN DEFAULT FALSE,
     is_featured BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (owner_id) REFERENCES users(user_id) ON DELETE SET NULL
@@ -152,6 +154,18 @@ CREATE TABLE currency_rates (
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Blocked slots table
+CREATE TABLE blocked_slots (
+    block_id INT PRIMARY KEY AUTO_INCREMENT,
+    restaurant_id INT,
+    block_date DATE NOT NULL,
+    block_time_start TIME NOT NULL,
+    block_time_end TIME NOT NULL,
+    reason VARCHAR(255), -- e.g. 'Maintenance', 'Private Event'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (restaurant_id) REFERENCES restaurants(restaurant_id) ON DELETE CASCADE
+);
+
 -- Create indexes for better performance
 CREATE INDEX idx_restaurant_location ON restaurants(latitude, longitude);
 CREATE INDEX idx_restaurant_cuisine ON restaurants(cuisine_type);
@@ -173,17 +187,17 @@ INSERT INTO users (username, email, password, role, first_name, last_name, phone
 ('owner4', 'owner4@restaurant.com', '$2y$10$tjGfG2ZJaGSfvSl/TiNyruuq3nSThYIyH6SERgZqFN0qkK1T2/ZKq', 'owner', 'Lisa', 'Garcia', '+1234567899', 0);
 
 -- Insert sample restaurants
-INSERT INTO restaurants (owner_id, name, description, cuisine_type, address, latitude, longitude, phone, email, price_range, opening_hours, is_featured) VALUES
-(2, 'The Golden Spoon', 'Fine dining experience with modern cuisine', 'Contemporary', '123 Main St, City Center', 40.7128, -74.0060, '+1234567001', 'contact@goldenspoon.com', '$$$', '{"monday":{"open":"11:00","close":"22:00"}}', true),
-(2, 'Pasta Paradise', 'Authentic Italian cuisine', 'Italian', '456 Oak Ave, Downtown', 40.7129, -74.0061, '+1234567002', 'info@pastaparadise.com', '$$', '{"monday":{"open":"11:30","close":"23:00"}}', true),
-(3, 'Sushi Master', 'Premium Japanese dining', 'Japanese', '789 Pine St, Eastside', 40.7130, -74.0062, '+1234567003', 'hello@sushimaster.com', '$$$', '{"monday":{"open":"12:00","close":"22:30"}}', true),
-(3, 'Taco Fiesta', 'Vibrant Mexican street food', 'Mexican', '321 Elm St, Westside', 40.7131, -74.0063, '+1234567004', 'hola@tacofiesta.com', '$', '{"monday":{"open":"10:00","close":"21:00"}}', true),
-(9, 'Burger Bliss', 'Gourmet burgers and shakes', 'American', '654 Maple Dr, Northside', 40.7132, -74.0064, '+1234567005', 'eat@burgerbliss.com', '$$', '{"monday":{"open":"11:00","close":"23:00"}}', true),
-(9, 'Spice Route', 'Authentic Indian cuisine', 'Indian', '987 Cedar Ln, Southside', 40.7133, -74.0065, '+1234567006', 'namaste@spiceroute.com', '$$', '{"monday":{"open":"11:30","close":"22:30"}}', true),
-(10, 'Mediterranean Delight', 'Fresh Mediterranean dishes', 'Mediterranean', '147 Beach Rd, Seaside', 40.7134, -74.0066, '+1234567007', 'hello@meddelight.com', '$$', '{"monday":{"open":"11:00","close":"21:30"}}', true),
-(10, 'Dim Sum Dynasty', 'Traditional Chinese dim sum', 'Chinese', '258 River St, Riverside', 40.7135, -74.0067, '+1234567008', 'info@dimsumdynasty.com', '$$', '{"monday":{"open":"09:00","close":"20:00"}}', true),
-(2, 'Veggie Haven', 'Creative vegetarian cuisine', 'Vegetarian', '369 Garden Ave, Parkside', 40.7136, -74.0068, '+1234567009', 'green@veggiehaven.com', '$$', '{"monday":{"open":"10:30","close":"21:30"}}', true),
-(3, 'Steak House', 'Premium aged steaks', 'Steakhouse', '741 Grill St, Uptown', 40.7137, -74.0069, '+1234567010', 'meat@steakhouse.com', '$$$$', '{"monday":{"open":"16:00","close":"23:00"}}', true);
+INSERT INTO restaurants (owner_id, name, description, cuisine_type, address, latitude, longitude, phone, email, website, price_range, opening_hours, is_featured) VALUES
+(2, 'The Golden Spoon', 'Fine dining experience with modern cuisine', 'Contemporary', '123 Main St, City Center', 40.7128, -74.0060, '+1234567001', 'contact@goldenspoon.com', 'https://goldenspoon.com', '$$$', '{"monday":{"open":"11:00","close":"22:00"}}', true),
+(2, 'Pasta Paradise', 'Authentic Italian cuisine', 'Italian', '456 Oak Ave, Downtown', 40.7129, -74.0061, '+1234567002', 'info@pastaparadise.com', 'https://pastaparadise.com', '$$', '{"monday":{"open":"11:30","close":"23:00"}}', true),
+(3, 'Sushi Master', 'Premium Japanese dining', 'Japanese', '789 Pine St, Eastside', 40.7130, -74.0062, '+1234567003', 'hello@sushimaster.com', 'https://sushimaster.com', '$$$', '{"monday":{"open":"12:00","close":"22:30"}}', true),
+(3, 'Taco Fiesta', 'Vibrant Mexican street food', 'Mexican', '321 Elm St, Westside', 40.7131, -74.0063, '+1234567004', 'hola@tacofiesta.com', 'https://tacofiesta.com', '$', '{"monday":{"open":"10:00","close":"21:00"}}', true),
+(9, 'Burger Bliss', 'Gourmet burgers and shakes', 'American', '654 Maple Dr, Northside', 40.7132, -74.0064, '+1234567005', 'eat@burgerbliss.com', 'https://burgerbliss.com', '$$', '{"monday":{"open":"11:00","close":"23:00"}}', true),
+(9, 'Spice Route', 'Authentic Indian cuisine', 'Indian', '987 Cedar Ln, Southside', 40.7133, -74.0065, '+1234567006', 'namaste@spiceroute.com', 'https://spiceroute.com', '$$', '{"monday":{"open":"11:30","close":"22:30"}}', true),
+(10, 'Mediterranean Delight', 'Fresh Mediterranean dishes', 'Mediterranean', '147 Beach Rd, Seaside', 40.7134, -74.0066, '+1234567007', 'hello@meddelight.com', 'https://meddelight.com', '$$', '{"monday":{"open":"11:00","close":"21:30"}}', true),
+(10, 'Dim Sum Dynasty', 'Traditional Chinese dim sum', 'Chinese', '258 River St, Riverside', 40.7135, -74.0067, '+1234567008', 'info@dimsumdynasty.com', 'https://dimsumdynasty.com', '$$', '{"monday":{"open":"09:00","close":"20:00"}}', true),
+(2, 'Veggie Haven', 'Creative vegetarian cuisine', 'Vegetarian', '369 Garden Ave, Parkside', 40.7136, -74.0068, '+1234567009', 'green@veggiehaven.com', 'https://veggiehaven.com', '$$', '{"monday":{"open":"10:30","close":"21:30"}}', true),
+(3, 'Steak House', 'Premium aged steaks', 'Steakhouse', '741 Grill St, Uptown', 40.7137, -74.0069, '+1234567010', 'meat@steakhouse.com', 'https://steakhouse.com', '$$$$', '{"monday":{"open":"16:00","close":"23:00"}}', true);
 
 -- Insert sample reviews
 INSERT INTO reviews (user_id, restaurant_id, cleanliness_rating, taste_rating, service_rating, price_rating, parking_rating, overall_rating, comment) VALUES
@@ -277,63 +291,63 @@ INSERT INTO currency_rates (code, name, rate, last_updated) VALUES
 ('SGD', 'Singapore Dollar', 1.350000, CURRENT_TIMESTAMP);
 
 -- Insert additional restaurant for testing
-INSERT INTO restaurants (owner_id, name, description, cuisine_type, address, latitude, longitude, phone, email, price_range, opening_hours) VALUES
+INSERT INTO restaurants (owner_id, name, description, cuisine_type, address, latitude, longitude, phone, email, website, price_range, opening_hours) VALUES
 -- Restaurants 1-10
-(2, 'The Golden Fork', 'Fine dining with a modern twist', 'Contemporary', '124 Main St, City Center', 40.7138, -74.0070, '+1234567011', 'contact@goldenfork.com', '$$$', '{"monday":{"open":"11:00","close":"22:00"}}'),
-(3, 'Pasta Palace', 'Authentic Italian pasta dishes', 'Italian', '457 Oak Ave, Downtown', 40.7139, -74.0071, '+1234567012', 'info@pastapalace.com', '$$', '{"monday":{"open":"11:30","close":"23:00"}}'),
-(9, 'Sushi Sensation', 'Premium Japanese sushi', 'Japanese', '790 Pine St, Eastside', 40.7140, -74.0072, '+1234567013', 'hello@sushisensation.com', '$$$', '{"monday":{"open":"12:00","close":"22:30"}}'),
-(10, 'Taco Town', 'Vibrant Mexican tacos', 'Mexican', '322 Elm St, Westside', 40.7141, -74.0073, '+1234567014', 'hola@tacotown.com', '$', '{"monday":{"open":"10:00","close":"21:00"}}'),
-(2, 'Burger Bonanza', 'Gourmet burgers and fries', 'American', '655 Maple Dr, Northside', 40.7142, -74.0074, '+1234567015', 'eat@burgerbonanza.com', '$$', '{"monday":{"open":"11:00","close":"23:00"}}'),
-(3, 'Spice Kingdom', 'Authentic Indian curries', 'Indian', '988 Cedar Ln, Southside', 40.7143, -74.0075, '+1234567016', 'namaste@spicekingdom.com', '$$', '{"monday":{"open":"11:30","close":"22:30"}}'),
-(9, 'Mediterranean Oasis', 'Fresh Mediterranean salads', 'Mediterranean', '148 Beach Rd, Seaside', 40.7144, -74.0076, '+1234567017', 'hello@mediterraneanoasis.com', '$$', '{"monday":{"open":"11:00","close":"21:30"}}'),
-(10, 'Dim Sum Delight', 'Traditional Chinese dim sum', 'Chinese', '259 River St, Riverside', 40.7145, -74.0077, '+1234567018', 'info@dimsumdelight.com', '$$', '{"monday":{"open":"09:00","close":"20:00"}}'),
-(2, 'Veggie Village', 'Creative vegetarian dishes', 'Vegetarian', '370 Garden Ave, Parkside', 40.7146, -74.0078, '+1234567019', 'green@veggievillage.com', '$$', '{"monday":{"open":"10:30","close":"21:30"}}'),
-(3, 'Steak & Co.', 'Premium aged steaks', 'Steakhouse', '742 Grill St, Uptown', 40.7147, -74.0079, '+1234567020', 'meat@steakandco.com', '$$$$', '{"monday":{"open":"16:00","close":"23:00"}}'),
+(2, 'The Golden Fork', 'Fine dining with a modern twist', 'Contemporary', '124 Main St, City Center', 40.7138, -74.0070, '+1234567011', 'contact@goldenfork.com', 'https://goldenfork.com', '$$$', '{"monday":{"open":"11:00","close":"22:00"}}'),
+(3, 'Pasta Palace', 'Authentic Italian pasta dishes', 'Italian', '457 Oak Ave, Downtown', 40.7139, -74.0071, '+1234567012', 'info@pastapalace.com', 'https://pastapalace.com', '$$', '{"monday":{"open":"11:30","close":"23:00"}}'),
+(9, 'Sushi Sensation', 'Premium Japanese sushi', 'Japanese', '790 Pine St, Eastside', 40.7140, -74.0072, '+1234567013', 'hello@sushisensation.com', 'https://sushisensation.com', '$$$', '{"monday":{"open":"12:00","close":"22:30"}}'),
+(10, 'Taco Town', 'Vibrant Mexican tacos', 'Mexican', '322 Elm St, Westside', 40.7141, -74.0073, '+1234567014', 'hola@tacotown.com', 'https://tacotown.com', '$', '{"monday":{"open":"10:00","close":"21:00"}}'),
+(2, 'Burger Bonanza', 'Gourmet burgers and fries', 'American', '655 Maple Dr, Northside', 40.7142, -74.0074, '+1234567015', 'eat@burgerbonanza.com', 'https://burgerbonanza.com', '$$', '{"monday":{"open":"11:00","close":"23:00"}}'),
+(3, 'Spice Kingdom', 'Authentic Indian curries', 'Indian', '988 Cedar Ln, Southside', 40.7143, -74.0075, '+1234567016', 'namaste@spicekingdom.com', 'https://spicekingdom.com', '$$', '{"monday":{"open":"11:30","close":"22:30"}}'),
+(9, 'Mediterranean Oasis', 'Fresh Mediterranean salads', 'Mediterranean', '148 Beach Rd, Seaside', 40.7144, -74.0076, '+1234567017', 'hello@mediterraneanoasis.com', 'https://mediterraneanoasis.com', '$$', '{"monday":{"open":"11:00","close":"21:30"}}'),
+(10, 'Dim Sum Delight', 'Traditional Chinese dim sum', 'Chinese', '259 River St, Riverside', 40.7145, -74.0077, '+1234567018', 'info@dimsumdelight.com', 'https://dimsumdelight.com', '$$', '{"monday":{"open":"09:00","close":"20:00"}}'),
+(2, 'Veggie Village', 'Creative vegetarian dishes', 'Vegetarian', '370 Garden Ave, Parkside', 40.7146, -74.0078, '+1234567019', 'green@veggievillage.com', 'https://veggievillage.com', '$$', '{"monday":{"open":"10:30","close":"21:30"}}'),
+(3, 'Steak & Co.', 'Premium aged steaks', 'Steakhouse', '742 Grill St, Uptown', 40.7147, -74.0079, '+1234567020', 'meat@steakandco.com', 'https://steakandco.com', '$$$$', '{"monday":{"open":"16:00","close":"23:00"}}'),
 
 -- Restaurants 11-20
-(9, 'Golden Bites', 'Modern fusion cuisine', 'Contemporary', '125 Main St, City Center', 40.7148, -74.0080, '+1234567021', 'contact@goldenbites.com', '$$$', '{"monday":{"open":"11:00","close":"22:00"}}'),
-(10, 'Pasta Express', 'Quick Italian meals', 'Italian', '458 Oak Ave, Downtown', 40.7149, -74.0081, '+1234567022', 'info@pastaexpress.com', '$$', '{"monday":{"open":"11:30","close":"23:00"}}'),
-(2, 'Sushi Supreme', 'Top-quality Japanese sushi', 'Japanese', '791 Pine St, Eastside', 40.7150, -74.0082, '+1234567023', 'hello@sushisupreme.com', '$$', '{"monday":{"open":"12:00","close":"22:30"}}'),
-(3, 'Taco Fiesta Express', 'Fast Mexican tacos', 'Mexican', '323 Elm St, Westside', 40.7151, -74.0083, '+1234567024', 'hola@tacofiestaexpress.com', '$', '{"monday":{"open":"10:00","close":"21:00"}}'),
-(9, 'Burger Kingpin', 'Classic burgers and fries', 'American', '656 Maple Dr, Northside', 40.7152, -74.0084, '+1234567025', 'eat@burgerkingpin.com', '$$', '{"monday":{"open":"11:00","close":"23:00"}}'),
-(10, 'Spice Junction', 'Flavorful Indian dishes', 'Indian', '989 Cedar Ln, Southside', 40.7153, -74.0085, '+1234567026', 'namaste@spicejunction.com', '$$', '{"monday":{"open":"11:30","close":"22:30"}}'),
-(2, 'Mediterranean Feast', 'Delicious Mediterranean platters', 'Mediterranean', '149 Beach Rd, Seaside', 40.7154, -74.0086, '+1234567027', 'hello@mediterraneanfeast.com', '$$', '{"monday":{"open":"11:00","close":"21:30"}}'),
-(3, 'Dim Sum Dynasty II', 'Authentic Chinese dim sum', 'Chinese', '260 River St, Riverside', 40.7155, -74.0087, '+1234567028', 'info@dimsumdynastyii.com', '$$', '{"monday":{"open":"09:00","close":"20:00"}}'),
-(9, 'Veggie Paradise', 'Healthy vegetarian options', 'Vegetarian', '371 Garden Ave, Parkside', 40.7156, -74.0088, '+1234567029', 'green@veggieparadise.com', '$$', '{"monday":{"open":"10:30","close":"21:30"}}'),
-(10, 'Steak Master', 'Perfectly grilled steaks', 'Steakhouse', '743 Grill St, Uptown', 40.7157, -74.0089, '+1234567030', 'meat@steakmaster.com', '$$$$', '{"monday":{"open":"16:00","close":"23:00"}}'),
+(9, 'Golden Bites', 'Modern fusion cuisine', 'Contemporary', '125 Main St, City Center', 40.7148, -74.0080, '+1234567021', 'contact@goldenbites.com', 'https://goldenbites.com', '$$$', '{"monday":{"open":"11:00","close":"22:00"}}'),
+(10, 'Pasta Express', 'Quick Italian meals', 'Italian', '458 Oak Ave, Downtown', 40.7149, -74.0081, '+1234567022', 'info@pastaexpress.com', 'https://pastaexpress.com', '$$', '{"monday":{"open":"11:30","close":"23:00"}}'),
+(2, 'Sushi Supreme', 'Top-quality Japanese sushi', 'Japanese', '791 Pine St, Eastside', 40.7150, -74.0082, '+1234567023', 'hello@sushisupreme.com', 'https://sushisupreme.com', '$$$', '{"monday":{"open":"12:00","close":"22:30"}}'),
+(3, 'Taco Fiesta Express', 'Fast Mexican tacos', 'Mexican', '323 Elm St, Westside', 40.7151, -74.0083, '+1234567024', 'hola@tacofiestaexpress.com', 'https://tacofiestaexpress.com', '$', '{"monday":{"open":"10:00","close":"21:00"}}'),
+(9, 'Burger Kingpin', 'Classic burgers and fries', 'American', '656 Maple Dr, Northside', 40.7152, -74.0084, '+1234567025', 'eat@burgerkingpin.com', 'https://burgerkingpin.com', '$$', '{"monday":{"open":"11:00","close":"23:00"}}'),
+(10, 'Spice Junction', 'Flavorful Indian dishes', 'Indian', '989 Cedar Ln, Southside', 40.7153, -74.0085, '+1234567026', 'namaste@spicejunction.com', 'https://spicejunction.com', '$$', '{"monday":{"open":"11:30","close":"22:30"}}'),
+(2, 'Mediterranean Feast', 'Delicious Mediterranean platters', 'Mediterranean', '149 Beach Rd, Seaside', 40.7154, -74.0086, '+1234567027', 'hello@mediterraneanfeast.com', 'https://mediterraneanfeast.com', '$$', '{"monday":{"open":"11:00","close":"21:30"}}'),
+(3, 'Dim Sum Dynasty II', 'Authentic Chinese dim sum', 'Chinese', '260 River St, Riverside', 40.7155, -74.0087, '+1234567028', 'info@dimsumdynastyii.com', 'https://dimsumdynastyii.com', '$$', '{"monday":{"open":"09:00","close":"20:00"}}'),
+(9, 'Veggie Paradise', 'Healthy vegetarian options', 'Vegetarian', '371 Garden Ave, Parkside', 40.7156, -74.0088, '+1234567029', 'green@veggieparadise.com', 'https://veggieparadise.com', '$$', '{"monday":{"open":"10:30","close":"21:30"}}'),
+(10, 'Steak Master', 'Perfectly grilled steaks', 'Steakhouse', '743 Grill St, Uptown', 40.7157, -74.0089, '+1234567030', 'meat@steakmaster.com', 'https://steakmaster.com', '$$$$', '{"monday":{"open":"16:00","close":"23:00"}}'),
 
 -- Restaurants 21-30
-(2, 'Golden Plate', 'Elegant dining experience', 'Contemporary', '126 Main St, City Center', 40.7158, -74.0090, '+1234567031', 'contact@goldenplate.com', '$$$', '{"monday":{"open":"11:00","close":"22:00"}}'),
-(3, 'Pasta Perfection', 'Homemade Italian pasta', 'Italian', '459 Oak Ave, Downtown', 40.7159, -74.0091, '+1234567032', 'info@pastaperfection.com', '$$', '{"monday":{"open":"11:30","close":"23:00"}}'),
-(9, 'Sushi Heaven', 'Exquisite Japanese sushi', 'Japanese', '792 Pine St, Eastside', 40.7160, -74.0092, '+1234567033', 'hello@sushiheaven.com', '$$$', '{"monday":{"open":"12:00","close":"22:30"}}'),
-(10, 'Taco Loco', 'Spicy Mexican tacos', 'Mexican', '324 Elm St, Westside', 40.7161, -74.0093, '+1234567034', 'hola@tacoloco.com', '$', '{"monday":{"open":"10:00","close":"21:00"}}'),
-(2, 'Burger Haven', 'Juicy burgers and shakes', 'American', '657 Maple Dr, Northside', 40.7162, -74.0094, '+1234567035', 'eat@burgerhaven.com', '$$', '{"monday":{"open":"11:00","close":"23:00"}}'),
-(3, 'Spice Fusion', 'Innovative Indian flavors', 'Indian', '990 Cedar Ln, Southside', 40.7163, -74.0095, '+1234567036', 'namaste@spicefusion.com', '$$', '{"monday":{"open":"11:30","close":"22:30"}}'),
-(9, 'Mediterranean Magic', 'Mouthwatering Mediterranean dishes', 'Mediterranean', '150 Beach Rd, Seaside', 40.7164, -74.0096, '+1234567037', 'hello@mediterraneanmagic.com', '$$', '{"monday":{"open":"11:00","close":"21:30"}}'),
-(10, 'Dim Sum House', 'Classic Chinese dim sum', 'Chinese', '261 River St, Riverside', 40.7165, -74.0097, '+1234567038', 'info@dimsumhouse.com', '$$', '{"monday":{"open":"09:00","close":"20:00"}}'),
-(2, 'Veggie Delight', 'Wholesome vegetarian meals', 'Vegetarian', '372 Garden Ave, Parkside', 40.7166, -74.0098, '+1234567039', 'green@veggiedelight.com', '$$', '{"monday":{"open":"10:30","close":"21:30"}}'),
-(3, 'Steak Royale', 'Luxurious steakhouse dining', 'Steakhouse', '744 Grill St, Uptown', 40.7167, -74.0099, '+1234567040', 'meat@steakroyale.com', '$$$$', '{"monday":{"open":"16:00","close":"23:00"}}'),
+(2, 'Golden Plate', 'Elegant dining experience', 'Contemporary', '126 Main St, City Center', 40.7158, -74.0090, '+1234567031', 'contact@goldenplate.com', 'https://goldenplate.com', '$$$', '{"monday":{"open":"11:00","close":"22:00"}}'),
+(3, 'Pasta Perfection', 'Homemade Italian pasta', 'Italian', '459 Oak Ave, Downtown', 40.7159, -74.0091, '+1234567032', 'info@pastaperfection.com', 'https://pastaperfection.com', '$$', '{"monday":{"open":"11:30","close":"23:00"}}'),
+(9, 'Sushi Heaven', 'Exquisite Japanese sushi', 'Japanese', '792 Pine St, Eastside', 40.7160, -74.0092, '+1234567033', 'hello@sushiheaven.com', 'https://sushiheaven.com', '$$$', '{"monday":{"open":"12:00","close":"22:30"}}'),
+(10, 'Taco Loco', 'Spicy Mexican tacos', 'Mexican', '324 Elm St, Westside', 40.7161, -74.0093, '+1234567034', 'hola@tacoloco.com', 'https://tacoloco.com', '$', '{"monday":{"open":"10:00","close":"21:00"}}'),
+(2, 'Burger Haven', 'Juicy burgers and shakes', 'American', '657 Maple Dr, Northside', 40.7162, -74.0094, '+1234567035', 'eat@burgerhaven.com', 'https://burgerhaven.com', '$$', '{"monday":{"open":"11:00","close":"23:00"}}'),
+(3, 'Spice Fusion', 'Innovative Indian flavors', 'Indian', '990 Cedar Ln, Southside', 40.7163, -74.0095, '+1234567036', 'namaste@spicefusion.com', 'https://spicefusion.com', '$$', '{"monday":{"open":"11:30","close":"22:30"}}'),
+(9, 'Mediterranean Magic', 'Mouthwatering Mediterranean dishes', 'Mediterranean', '150 Beach Rd, Seaside', 40.7164, -74.0096, '+1234567037', 'hello@mediterraneanmagic.com', 'https://mediterraneanmagic.com', '$$', '{"monday":{"open":"11:00","close":"21:30"}}'),
+(10, 'Dim Sum House', 'Classic Chinese dim sum', 'Chinese', '261 River St, Riverside', 40.7165, -74.0097, '+1234567038', 'info@dimsumhouse.com', 'https://dimsumhouse.com', '$$', '{"monday":{"open":"09:00","close":"20:00"}}'),
+(2, 'Veggie Delight', 'Wholesome vegetarian meals', 'Vegetarian', '372 Garden Ave, Parkside', 40.7166, -74.0098, '+1234567039', 'green@veggiedelight.com', 'https://veggiedelight.com', '$$', '{"monday":{"open":"10:30","close":"21:30"}}'),
+(3, 'Steak Royale', 'Luxurious steakhouse dining', 'Steakhouse', '744 Grill St, Uptown', 40.7167, -74.0099, '+1234567040', 'meat@steakroyale.com', 'https://steakroyale.com', '$$$$', '{"monday":{"open":"16:00","close":"23:00"}}'),
 
 -- Restaurants 31-40
-(9, 'Golden Cuisine', 'Upscale dining experience', 'Contemporary', '127 Main St, City Center', 40.7168, -74.0100, '+1234567041', 'contact@goldencuisine.com', '$$$', '{"monday":{"open":"11:00","close":"22:00"}}'),
-(10, 'Pasta World', 'Global Italian flavors', 'Italian', '460 Oak Ave, Downtown', 40.7169, -74.0101, '+1234567042', 'info@pastaworld.com', '$$', '{"monday":{"open":"11:30","close":"23:00"}}'),
-(2, 'Sushi Dreams', 'Dreamy Japanese sushi', 'Japanese', '793 Pine St, Eastside', 40.7170, -74.0102, '+1234567043', 'hello@sushidreams.com', '$$$', '{"monday":{"open":"12:00","close":"22:30"}}'),
-(3, 'Taco Fiesta Grande', 'Grand Mexican fiesta', 'Mexican', '325 Elm St, Westside', 40.7171, -74.0103, '+1234567044', 'hola@tacofiestagrande.com', '$', '{"monday":{"open":"10:00","close":"21:00"}}'),
-(9, 'Burger Empire', 'King of burgers', 'American', '658 Maple Dr, Northside', 40.7172, -74.0104, '+1234567045', 'eat@burgerempire.com', '$$', '{"monday":{"open":"11:00","close":"23:00"}}'),
-(10, 'Spice Harmony', 'Harmonious Indian spices', 'Indian', '991 Cedar Ln, Southside', 40.7173, -74.0105, '+1234567046', 'namaste@spiceharmony.com', '$$', '{"monday":{"open":"11:30","close":"22:30"}}'),
-(2, 'Mediterranean Coast', 'Coastal Mediterranean flavors', 'Mediterranean', '151 Beach Rd, Seaside', 40.7174, -74.0106, '+1234567047', 'hello@mediterraneancoast.com', '$$', '{"monday":{"open":"11:00","close":"21:30"}}'),
-(3, 'Dim Sum Palace', 'Royal Chinese dim sum', 'Chinese', '262 River St, Riverside', 40.7175, -74.0107, '+1234567048', 'info@dimsumpalace.com', '$$', '{"monday":{"open":"09:00","close":"20:00"}}'),
-(9, 'Veggie Kingdom', 'Kingdom of vegetarian delights', 'Vegetarian', '373 Garden Ave, Parkside', 40.7176, -74.0108, '+1234567049', 'green@veggiekingdom.com', '$$', '{"monday":{"open":"10:30","close":"21:30"}}'),
-(10, 'Steak Dynasty', 'Dynastic steakhouse experience', 'Steakhouse', '745 Grill St, Uptown', 40.7177, -74.0109, '+1234567050', 'meat@steakdynasty.com', '$$$$', '{"monday":{"open":"16:00","close":"23:00"}}'),
+(9, 'Golden Cuisine', 'Upscale dining experience', 'Contemporary', '127 Main St, City Center', 40.7168, -74.0100, '+1234567041', 'contact@goldencuisine.com', 'https://goldencuisine.com', '$$$', '{"monday":{"open":"11:00","close":"22:00"}}'),
+(10, 'Pasta World', 'Global Italian flavors', 'Italian', '460 Oak Ave, Downtown', 40.7169, -74.0101, '+1234567042', 'info@pastaworld.com', 'https://pastaworld.com', '$$', '{"monday":{"open":"11:30","close":"23:00"}}'),
+(2, 'Sushi Dreams', 'Dreamy Japanese sushi', 'Japanese', '793 Pine St, Eastside', 40.7170, -74.0102, '+1234567043', 'hello@sushidreams.com', 'https://sushidreams.com', '$$$', '{"monday":{"open":"12:00","close":"22:30"}}'),
+(3, 'Taco Fiesta Grande', 'Grand Mexican fiesta', 'Mexican', '325 Elm St, Westside', 40.7171, -74.0103, '+1234567044', 'hola@tacofiestagrande.com', 'https://tacofiestagrande.com', '$', '{"monday":{"open":"10:00","close":"21:00"}}'),
+(9, 'Burger Empire', 'King of burgers', 'American', '658 Maple Dr, Northside', 40.7172, -74.0104, '+1234567045', 'eat@burgerempire.com', 'https://burgerempire.com', '$$', '{"monday":{"open":"11:00","close":"23:00"}}'),
+(10, 'Spice Harmony', 'Harmonious Indian spices', 'Indian', '991 Cedar Ln, Southside', 40.7173, -74.0105, '+1234567046', 'namaste@spiceharmony.com', 'https://spiceharmony.com', '$$', '{"monday":{"open":"11:30","close":"22:30"}}'),
+(2, 'Mediterranean Coast', 'Coastal Mediterranean flavors', 'Mediterranean', '151 Beach Rd, Seaside', 40.7174, -74.0106, '+1234567047', 'hello@mediterraneancoast.com', 'https://mediterraneancoast.com', '$$', '{"monday":{"open":"11:00","close":"21:30"}}'),
+(3, 'Dim Sum Palace', 'Royal Chinese dim sum', 'Chinese', '262 River St, Riverside', 40.7175, -74.0107, '+1234567048', 'info@dimsumpalace.com', 'https://dimsumpalace.com', '$$', '{"monday":{"open":"09:00","close":"20:00"}}'),
+(9, 'Veggie Kingdom', 'Kingdom of vegetarian delights', 'Vegetarian', '373 Garden Ave, Parkside', 40.7176, -74.0108, '+1234567049', 'green@veggiekingdom.com', 'https://veggiekingdom.com', '$$', '{"monday":{"open":"10:30","close":"21:30"}}'),
+(10, 'Steak Dynasty', 'Dynastic steakhouse experience', 'Steakhouse', '745 Grill St, Uptown', 40.7177, -74.0109, '+1234567050', 'meat@steakdynasty.com', 'https://steakdynasty.com', '$$$$', '{"monday":{"open":"16:00","close":"23:00"}}'),
 
 -- Restaurants 41-50
-(2, 'Golden Table', 'Table of golden flavors', 'Contemporary', '128 Main St, City Center', 40.7178, -74.0110, '+1234567051', 'contact@goldentable.com', '$$$', '{"monday":{"open":"11:00","close":"22:00"}}'),
-(3, 'Pasta Passion', 'Passionate Italian cooking', 'Italian', '461 Oak Ave, Downtown', 40.7179, -74.0111, '+1234567052', 'info@pastapassion.com', '$$', '{"monday":{"open":"11:30","close":"23:00"}}'),
-(9, 'Sushi Zen', 'Zen-like Japanese sushi', 'Japanese', '794 Pine St, Eastside', 40.7180, -74.0112, '+1234567053', 'hello@sushizen.com', '$$$', '{"monday":{"open":"12:00","close":"22:30"}}'),
-(10, 'Taco Fiesta Supreme', 'Supreme Mexican tacos', 'Mexican', '326 Elm St, Westside', 40.7181, -74.0113, '+1234567054', 'hola@tacofiestasupreme.com', '$', '{"monday":{"open":"10:00","close":"21:00"}}'),
-(2, 'Burger Legend', 'Legendary burger experience', 'American', '659 Maple Dr, Northside', 40.7182, -74.0114, '+1234567055', 'eat@burgerlegend.com', '$$', '{"monday":{"open":"11:00","close":"23:00"}}'),
-(3, 'Spice Symphony', 'Symphony of Indian spices', 'Indian', '992 Cedar Ln, Southside', 40.7183, -74.0115, '+1234567056', 'namaste@spicesymphony.com', '$$', '{"monday":{"open":"11:30","close":"22:30"}}'),
-(9, 'Mediterranean Breeze', 'Breezy Mediterranean dishes', 'Mediterranean', '152 Beach Rd, Seaside', 40.7184, -74.0116, '+1234567057', 'hello@mediterraneanbreeze.com', '$$', '{"monday":{"open":"11:00","close":"21:30"}}'),
-(10, 'Dim Sum Royale', 'Royale Chinese dim sum', 'Chinese', '263 River St, Riverside', 40.7185, -74.0117, '+1234567058', 'info@dimsumroyale.com', '$$', '{"monday":{"open":"09:00","close":"20:00"}}'),
-(2, 'Veggie Bliss', 'Blissful vegetarian cuisine', 'Vegetarian', '374 Garden Ave, Parkside', 40.7186, -74.0118, '+1234567059', 'green@veggiebliss.com', '$$', '{"monday":{"open":"10:30","close":"21:30"}}'),
-(3, 'Steak Royale II', 'Second helping of luxury steaks', 'Steakhouse', '746 Grill St, Uptown', 40.7187, -74.0119, '+1234567060', 'meat@steakroyaleii.com', '$$$$', '{"monday":{"open":"16:00","close":"23:00"}}');
+(2, 'Golden Table', 'Table of golden flavors', 'Contemporary', '128 Main St, City Center', 40.7178, -74.0110, '+1234567051', 'contact@goldentable.com', 'https://goldentable.com', '$$$', '{"monday":{"open":"11:00","close":"22:00"}}'),
+(3, 'Pasta Passion', 'Passionate Italian cooking', 'Italian', '461 Oak Ave, Downtown', 40.7179, -74.0111, '+1234567052', 'info@pastapassion.com', 'https://pastapassion.com', '$$', '{"monday":{"open":"11:30","close":"23:00"}}'),
+(9, 'Sushi Zen', 'Zen-like Japanese sushi', 'Japanese', '794 Pine St, Eastside', 40.7180, -74.0112, '+1234567053', 'hello@sushizen.com', 'https://sushizen.com', '$$$', '{"monday":{"open":"12:00","close":"22:30"}}'),
+(10, 'Taco Fiesta Supreme', 'Supreme Mexican tacos', 'Mexican', '326 Elm St, Westside', 40.7181, -74.0113, '+1234567054', 'hola@tacofiestasupreme.com', 'https://tacofiestasupreme.com', '$', '{"monday":{"open":"10:00","close":"21:00"}}'),
+(2, 'Burger Legend', 'Legendary burger experience', 'American', '659 Maple Dr, Northside', 40.7182, -74.0114, '+1234567055', 'eat@burgerlegend.com', 'https://burgerlegend.com', '$$', '{"monday":{"open":"11:00","close":"23:00"}}'),
+(3, 'Spice Symphony', 'Symphony of Indian spices', 'Indian', '992 Cedar Ln, Southside', 40.7183, -74.0115, '+1234567056', 'namaste@spicesymphony.com', 'https://spicesymphony.com', '$$', '{"monday":{"open":"11:30","close":"22:30"}}'),
+(9, 'Mediterranean Breeze', 'Breezy Mediterranean dishes', 'Mediterranean', '152 Beach Rd, Seaside', 40.7184, -74.0116, '+1234567057', 'hello@mediterraneanbreeze.com', 'https://mediterraneanbreeze.com', '$$', '{"monday":{"open":"11:00","close":"21:30"}}'),
+(10, 'Dim Sum Royale', 'Royale Chinese dim sum', 'Chinese', '263 River St, Riverside', 40.7185, -74.0117, '+1234567058', 'info@dimsumroyale.com', 'https://dimsumroyale.com', '$$', '{"monday":{"open":"09:00","close":"20:00"}}'),
+(2, 'Veggie Bliss', 'Blissful vegetarian cuisine', 'Vegetarian', '374 Garden Ave, Parkside', 40.7186, -74.0118, '+1234567059', 'green@veggiebliss.com', 'https://veggiebliss.com', '$$', '{"monday":{"open":"10:30","close":"21:30"}}'),
+(3, 'Steak Royale II', 'Second helping of luxury steaks', 'Steakhouse', '746 Grill St, Uptown', 40.7187, -74.0119, '+1234567060', 'meat@steakroyaleii.com', 'https://steakroyaleii.com', '$$$$', '{"monday":{"open":"16:00","close":"23:00"}}');

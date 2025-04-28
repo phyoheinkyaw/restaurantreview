@@ -439,7 +439,7 @@ if ($has_restaurants) {
                             // Find the current restaurant name
                             $current_restaurant_name = "Select Restaurant";
                             foreach ($owner_restaurants as $restaurant) {
-                                if ($restaurant['restaurant_id'] == $current_restaurant_id) {
+                                if ($restaurant['restaurant_id'] == $_SESSION['current_restaurant_id']) {
                                     $current_restaurant_name = $restaurant['name'];
                                     break;
                                 }
@@ -450,14 +450,33 @@ if ($has_restaurants) {
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="restaurantDropdown">
                             <?php foreach ($owner_restaurants as $restaurant): ?>
                                 <li>
-                                    <a class="dropdown-item <?php echo ($restaurant['restaurant_id'] == $current_restaurant_id) ? 'active' : ''; ?>" 
-                                       href="?restaurant_id=<?php echo $restaurant['restaurant_id']; ?>">
+                                    <a class="dropdown-item <?php echo ($restaurant['restaurant_id'] == $_SESSION['current_restaurant_id']) ? 'active' : ''; ?>" 
+                                       href="javascript:void(0)" 
+                                       onclick="changeRestaurant(<?php echo $restaurant['restaurant_id']; ?>)">
                                         <?php echo htmlspecialchars($restaurant['name']); ?>
                                     </a>
                                 </li>
                             <?php endforeach; ?>
                         </ul>
                     </div>
+
+                    <script>
+                    function changeRestaurant(restaurantId) {
+                        // Create a form dynamically and submit it
+                        var form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = 'change_restaurant.php';
+                        
+                        var input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'restaurant_id';
+                        input.value = restaurantId;
+                        
+                        form.appendChild(input);
+                        document.body.appendChild(form);
+                        form.submit();
+                    }
+                    </script>
                     <?php endif; ?>
                     
                     <div class="dropdown me-3">

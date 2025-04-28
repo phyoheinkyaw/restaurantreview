@@ -21,8 +21,12 @@ echo '<div class="admin-content-overlay" onclick="document.querySelector(\'.admi
             <?php if ($has_restaurants): ?>
             <div class="nav-header">RESTAURANT MANAGEMENT</div>
             <a href="restaurants.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'restaurants.php' ? 'active' : ''; ?>">
+                <i class="fas fa-list"></i>
+                <span>My All Restaurants</span>
+            </a>
+            <a href="manage_restaurant.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'manage_restaurant.php' ? 'active' : ''; ?>">
                 <i class="fas fa-store"></i>
-                <span>My Restaurant</span>
+                <span>Manage Restaurant</span>
             </a>
             <a href="menu.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'menu.php' ? 'active' : ''; ?>">
                 <i class="fas fa-book-open"></i>
@@ -38,6 +42,10 @@ echo '<div class="admin-content-overlay" onclick="document.querySelector(\'.admi
             <a href="reviews.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'reviews.php' ? 'active' : ''; ?>">
                 <i class="fas fa-star"></i>
                 <span>Customer Reviews</span>
+            </a>
+            <a href="block_slots.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'block_slots.php' ? 'active' : ''; ?>">
+                <i class="fas fa-ban"></i>
+                <span>Blocked Slots</span>
             </a>
             <?php else: ?>
             <div class="nav-header">GET STARTED</div>
