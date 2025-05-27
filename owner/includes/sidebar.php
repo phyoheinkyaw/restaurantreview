@@ -39,6 +39,10 @@ echo '<div class="admin-content-overlay" onclick="document.querySelector(\'.admi
                 <span class="badge bg-danger rounded-pill ms-auto"><?php echo $notification_count; ?></span>
                 <?php endif; ?>
             </a>
+            <a href="deposit_settings.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'deposit_settings.php' ? 'active' : ''; ?>">
+                <i class="fas fa-money-check-alt"></i>
+                <span>Deposit Settings</span>
+            </a>
             <a href="reviews.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'reviews.php' ? 'active' : ''; ?>">
                 <i class="fas fa-star"></i>
                 <span>Customer Reviews</span>

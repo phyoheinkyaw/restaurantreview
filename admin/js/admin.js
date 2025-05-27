@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Toggle sidebar
-    const sidebarToggle = document.querySelector('.sidebar-toggle');
+    const sidebarToggle = document.querySelector('.sidebar-toggle') || document.getElementById('sidebarToggle');
     const adminSidebar = document.querySelector('.admin-sidebar');
     const adminContent = document.querySelector('.admin-content');
     const contentOverlay = document.querySelector('.admin-content-overlay');
@@ -28,6 +28,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 adminSidebar.classList.toggle('collapsed');
                 adminContent.classList.toggle('expanded');
             }
+            
+            // For Bootstrap sidebar toggle
+            document.body.classList.toggle('sb-sidenav-toggled');
+            localStorage.setItem('sb|sidebar-toggle', document.body.classList.contains('sb-sidenav-toggled'));
         });
     }
     
@@ -63,22 +67,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Initialize any data tables if available
-    if (typeof $.fn !== 'undefined' && typeof $.fn.DataTable !== 'undefined') {
-        $('.data-table table').DataTable({
-            responsive: true,
-            scrollX: false,
-            autoWidth: true,
-            language: {
-                search: "_INPUT_",
-                searchPlaceholder: "Search..."
-            },
-            columnDefs: [
-                { responsivePriority: 1, targets: 0 },
-                { responsivePriority: 2, targets: -1 }
-            ]
-        });
-    }
+    // Initialize data tables if available and not already initialized
+    initializeDataTables();
     
     // Handle confirmation dialogs
     const confirmActions = document.querySelectorAll('[data-confirm]');
@@ -91,22 +81,108 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Initialize Bootstrap 5 tooltips
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    if (typeof bootstrap !== 'undefined' && typeof bootstrap.Tooltip !== 'undefined') {
-        tooltipTriggerList.map(function(tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
+    // Initialize Bootstrap 5 tooltips and popovers
+    if (typeof bootstrap !== 'undefined') {
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        if (typeof bootstrap.Tooltip !== 'undefined') {
+            tooltipTriggerList.map(function(tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        }
+
+        // Initialize Bootstrap 5 dropdowns manually if needed
+        const dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
+        if (typeof bootstrap.Dropdown !== 'undefined') {
+            dropdownElementList.map(function(dropdownToggleEl) {
+                return new bootstrap.Dropdown(dropdownToggleEl);
+            });
+        }
+        
+        // Initialize Bootstrap 5 popovers
+        const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+        if (typeof bootstrap.Popover !== 'undefined') {
+            popoverTriggerList.map(function(popoverTriggerEl) {
+                return new bootstrap.Popover(popoverTriggerEl);
+            });
+        }
+    }
+    
+    // Handle unread message marking
+    const markAsReadButtons = document.querySelectorAll('.mark-as-read');
+    markAsReadButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const messageId = this.getAttribute('data-id');
+            const row = this.closest('tr');
+            
+            // Send AJAX request to mark message as read
+            fetch('mark_message_read.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'message_id=' + messageId
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update UI
+                    row.classList.remove('fw-bold');
+                    this.innerHTML = '<i class="fas fa-check"></i> Read';
+                    this.classList.remove('btn-primary');
+                    this.classList.add('btn-success');
+                    this.disabled = true;
+                    
+                    // Update unread count if available
+                    const badge = document.querySelector('.unread-count');
+                    if (badge) {
+                        const count = parseInt(badge.textContent) - 1;
+                        if (count <= 0) {
+                            badge.style.display = 'none';
+                        } else {
+                            badge.textContent = count;
+                        }
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
         });
+    });
+});
+
+// Function to safely initialize DataTables
+function initializeDataTables() {
+    if (typeof $.fn === 'undefined' || typeof $.fn.DataTable === 'undefined') {
+        return;
     }
 
-    // Initialize Bootstrap 5 dropdowns manually if needed
-    const dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
-    if (typeof bootstrap !== 'undefined' && typeof bootstrap.Dropdown !== 'undefined') {
-        dropdownElementList.map(function(dropdownToggleEl) {
-            return new bootstrap.Dropdown(dropdownToggleEl);
-        });
-    }
-});
+    // Initialize data tables with a check to prevent double initialization
+    const dataTablesSelector = '.data-table table, .datatable';
+    const tables = $(dataTablesSelector);
+    
+    tables.each(function() {
+        const tableId = $(this).attr('id');
+        
+        // Check if this table is already a DataTable
+        if (!$.fn.DataTable.isDataTable(this)) {
+            $(this).DataTable({
+                responsive: true,
+                scrollX: false,
+                autoWidth: true,
+                language: {
+                    search: "_INPUT_",
+                    searchPlaceholder: "Search..."
+                },
+                columnDefs: [
+                    { responsivePriority: 1, targets: 0 },
+                    { responsivePriority: 2, targets: -1 }
+                ]
+            });
+        }
+    });
+}
 
 // Chart initialization function
 function initCharts() {
@@ -193,20 +269,46 @@ function initCharts() {
     }
     
     // Reviews Distribution Chart
-    const reviewsChart = document.getElementById('reviewsChart');
-    if (reviewsChart) {
-        new Chart(reviewsChart, {
+    const reviewsDistChart = document.getElementById('reviewsDistChart');
+    if (reviewsDistChart) {
+        new Chart(reviewsDistChart, {
             type: 'doughnut',
             data: {
                 labels: ['5 Stars', '4 Stars', '3 Stars', '2 Stars', '1 Star'],
                 datasets: [{
-                    data: [45, 25, 15, 10, 5],
+                    data: [350, 280, 150, 60, 40],
+                    backgroundColor: ['#2dc2a3', '#6cc070', '#ea9e0b', '#f27c4d', '#e74c3c']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                },
+                cutout: '70%'
+            }
+        });
+    }
+    
+    // Restaurants by Cuisine Chart
+    const cuisineChart = document.getElementById('cuisineChart');
+    if (cuisineChart) {
+        new Chart(cuisineChart, {
+            type: 'polarArea',
+            data: {
+                labels: ['Italian', 'Japanese', 'Mexican', 'Indian', 'American', 'Other'],
+                datasets: [{
+                    data: [40, 35, 30, 25, 45, 20],
                     backgroundColor: [
-                        '#2dc2a3',
-                        '#5ad8bf',
-                        '#f6b83c',
-                        '#dd1840',
-                        '#e93559'
+                        'rgba(45, 194, 163, 0.7)',
+                        'rgba(108, 192, 112, 0.7)',
+                        'rgba(234, 158, 11, 0.7)',
+                        'rgba(242, 124, 77, 0.7)',
+                        'rgba(231, 76, 60, 0.7)',
+                        'rgba(149, 165, 166, 0.7)'
                     ]
                 }]
             },

@@ -299,25 +299,6 @@ $stmt->close();
     </div>
 </div>
 
-<script>
-// Initialize DataTable with custom options
-$(document).ready(function() {
-    $('.data-table table').DataTable({
-        responsive: true,
-        autoWidth: true,
-        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>><"row"<"col-sm-12"tr>><"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
-        language: {
-            search: "_INPUT_",
-            searchPlaceholder: "Search restaurants...",
-            lengthMenu: "Show _MENU_ restaurants",
-            info: "Showing _START_ to _END_ of _TOTAL_ restaurants",
-            infoEmpty: "Showing 0 to 0 of 0 restaurants",
-            infoFiltered: "(filtered from _MAX_ total restaurants)"
-        }
-    });
-});
-</script>
-
 <?php
 // Include footer
 include 'includes/footer.php';

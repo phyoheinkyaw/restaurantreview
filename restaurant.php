@@ -108,9 +108,9 @@ $avgRatings = calculateAverageRatings($restaurant_id);
                 <div class="col-lg-4 text-lg-end">
                     <div class="action-buttons">
                         <?php if (isset($_SESSION['user_id'])): ?>
-                            <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#reservationModal">
+                            <a href="reservation.php?id=<?php echo $restaurant_id; ?>" class="btn btn-primary me-2">
                                 <i class="fas fa-calendar-alt me-2"></i>Make Reservation
-                            </button>
+                            </a>
                             <a href="#reviews-section" class="btn btn-outline-primary">
                                 <i class="fas fa-star me-2"></i>Write Review
                             </a>
@@ -131,6 +131,13 @@ $avgRatings = calculateAverageRatings($restaurant_id);
     <!-- Restaurant Content -->
     <section class="restaurant-content py-5">
         <div class="container">
+            <?php if (isset($_GET['reservation_success'])): ?>
+                <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    <i class="fas fa-check-circle me-2"></i> Your reservation has been successfully made! You can view it in your <a href="reservations.php" class="alert-link">reservations page</a>.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            <?php endif; ?>
+            
             <div class="row">
                 <!-- Main Content -->
                 <div class="col-lg-8">
@@ -497,56 +504,6 @@ $avgRatings = calculateAverageRatings($restaurant_id);
         </div>
     </section>
 
-    <!-- Reservation Modal -->
-    <div class="modal fade" id="reservationModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Make a Reservation</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="reservationForm" action="process_reservation.php" method="POST">
-                        <input type="hidden" name="restaurant_id" value="<?php echo $restaurant_id; ?>">
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Date</label>
-                            <input type="date" class="form-control" name="date" required min="<?php echo date('Y-m-d'); ?>">
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Time</label>
-                            <select class="form-select" name="time" required>
-                                <?php
-                                $times = getAvailableTimeSlots($restaurant_id, date('Y-m-d'));
-                                foreach ($times as $time) {
-                                    echo "<option value='$time'>$time</option>";
-                                }
-                                ?>
-                            </select>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Party Size</label>
-                            <select class="form-select" name="party_size" required>
-                                <?php for ($i = 1; $i <= 10; $i++): ?>
-                                    <option value="<?php echo $i; ?>"><?php echo $i; ?> <?php echo $i === 1 ? 'Person' : 'People'; ?></option>
-                                <?php endfor; ?>
-                            </select>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Special Requests</label>
-                            <textarea class="form-control" name="special_requests" rows="3"></textarea>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-primary w-100">Confirm Reservation</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <?php include 'includes/footer.php'; ?>
 
     <script src="assets/js/main.js"></script>
@@ -702,121 +659,6 @@ $avgRatings = calculateAverageRatings($restaurant_id);
                 }
             `;
             document.head.appendChild(style);
-
-            // Handle reservation form submission
-            const reservationForm = document.getElementById('reservationForm');
-            if (reservationForm) {
-                reservationForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    
-                    // Check if all required fields are filled
-                    const requiredFields = this.querySelectorAll('[required]');
-                    let isValid = true;
-                    
-                    requiredFields.forEach(field => {
-                        if (!field.value) {
-                            isValid = false;
-                            field.classList.add('is-invalid');
-                        } else {
-                            field.classList.remove('is-invalid');
-                        }
-                    });
-                    
-                    if (isValid) {
-                        // Show loading state
-                        const submitBtn = this.querySelector('button[type="submit"]');
-                        const originalText = submitBtn.innerHTML;
-                        submitBtn.disabled = true;
-                        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
-                        
-                        // Submit form
-                        fetch('process_reservation.php', {
-                            method: 'POST',
-                            body: new FormData(this)
-                        })
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error('Network response was not ok');
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            console.log('Response:', data);
-                            if (data.success) {
-                                alert('Reservation submitted successfully!');
-                                // Reset form
-                                this.reset();
-                                // Close modal
-                                const modal = bootstrap.Modal.getInstance(document.getElementById('reservationModal'));
-                                if (modal) {
-                                    modal.hide();
-                                }
-                                // Show success message
-                                alert('Your reservation has been confirmed!');
-                            } else {
-                                alert(data.message || 'Error making reservation');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            alert('Error making reservation: ' + error.message);
-                        })
-                        .finally(() => {
-                            // Reset button state
-                            submitBtn.disabled = false;
-                            submitBtn.innerHTML = originalText;
-                        });
-                    } else {
-                        alert('Please fill in all required fields');
-                    }
-                });
-            }
-
-            // When date is changed, update time slots
-            const dateInput = document.querySelector('input[name="date"]');
-            const timeSelect = document.querySelector('select[name="time"]');
-            if (dateInput && timeSelect) {
-                dateInput.addEventListener('change', function() {
-                    const date = this.value;
-                    const restaurantId = document.querySelector('input[name="restaurant_id"]').value;
-                    
-                    if (date) {
-                        // Clear current options
-                        timeSelect.innerHTML = '<option value="">Loading...</option>';
-                        timeSelect.disabled = true;
-                        
-                        // Fetch available time slots for the selected date
-                        fetch(`get_timeslots.php?restaurant_id=${restaurantId}&date=${date}`)
-                            .then(response => {
-                                if (!response.ok) {
-                                    throw new Error('Network response was not ok');
-                                }
-                                return response.json();
-                            })
-                            .then(data => {
-                                timeSelect.innerHTML = '';
-                                
-                                if (data.length === 0) {
-                                    timeSelect.innerHTML = '<option value="">No available time slots</option>';
-                                } else {
-                                    data.forEach(time => {
-                                        const option = document.createElement('option');
-                                        option.value = time;
-                                        option.textContent = time;
-                                        timeSelect.appendChild(option);
-                                    });
-                                }
-                                
-                                timeSelect.disabled = false;
-                            })
-                            .catch(error => {
-                                console.error('Error:', error);
-                                timeSelect.innerHTML = '<option value="">Error loading time slots</option>';
-                                timeSelect.disabled = false;
-                            });
-                    }
-                });
-            }
 
             // Form validation and submission
             const reviewForm = document.getElementById('reviewForm');

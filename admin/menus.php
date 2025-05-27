@@ -346,25 +346,6 @@ if ($restaurant_id > 0) {
     </div>
 </div>
 
-<script>
-// Initialize DataTable with custom options
-$(document).ready(function() {
-    $('.data-table table').DataTable({
-        responsive: true,
-        autoWidth: true,
-        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>><"row"<"col-sm-12"tr>><"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
-        language: {
-            search: "_INPUT_",
-            searchPlaceholder: "Search menu items...",
-            lengthMenu: "Show _MENU_ items",
-            info: "Showing _START_ to _END_ of _TOTAL_ items",
-            infoEmpty: "Showing 0 to 0 of 0 items",
-            infoFiltered: "(filtered from _MAX_ total items)"
-        }
-    });
-});
-</script>
-
 <?php
 // Include footer
 include 'includes/footer.php';

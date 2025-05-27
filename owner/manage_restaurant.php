@@ -3,6 +3,8 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+// Start output buffering to prevent "headers already sent" errors
+ob_start();
 
 // Include database connection and header
 require_once 'includes/db_connect.php';
@@ -105,7 +107,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 WHERE restaurant_id = ?";
         
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("si", json_encode($hours), $restaurant_id);
+        $hours_json = json_encode($hours);
+        $stmt->bind_param("si", $hours_json, $restaurant_id);
         $stmt->execute();
         $stmt->close();
         
@@ -409,3 +412,7 @@ function editMenu(item) {
 </script>
 
 <?php require_once 'includes/footer.php'; ?>
+<?php 
+// Flush the output buffer
+ob_end_flush(); 
+?>

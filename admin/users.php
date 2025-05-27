@@ -320,34 +320,7 @@ foreach ($users as $user) {
 </style>
 
 <script>
-// Initialize DataTable with custom options
-$(document).ready(function() {
-    $('.data-table table').DataTable({
-        responsive: true,
-        autoWidth: true,
-        dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>><"row"<"col-sm-12"tr>><"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
-        language: {
-            search: "_INPUT_",
-            searchPlaceholder: "Search users...",
-            lengthMenu: "Show _MENU_ users",
-            info: "Showing _START_ to _END_ of _TOTAL_ users",
-            infoEmpty: "Showing 0 to 0 of 0 users",
-            infoFiltered: "(filtered from _MAX_ total users)"
-        }
-    });
-    
-    // Initialize dropdown submenus
-    $('.dropdown-submenu > a').on('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        $(this).next('.dropdown-menu').toggle();
-    });
-    
-    // Close dropdown submenus when clicking outside
-    $(document).on('click', function(e) {
-        $('.dropdown-submenu .dropdown-menu').hide();
-    });
-});
+// The DataTable initialization is now handled centrally in admin.js
 </script>
 
 <?php

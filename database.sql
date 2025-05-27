@@ -39,6 +39,12 @@ CREATE TABLE restaurants (
     has_wifi BOOLEAN DEFAULT FALSE,
     is_featured BOOLEAN DEFAULT FALSE,
     is_active BOOLEAN DEFAULT TRUE,
+    deposit_required BOOLEAN DEFAULT FALSE,
+    deposit_amount DECIMAL(10,2) DEFAULT 0.00,
+    deposit_account_name VARCHAR(100),
+    deposit_account_number VARCHAR(50),
+    deposit_bank_name VARCHAR(100),
+    deposit_payment_instructions TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (owner_id) REFERENCES users(user_id) ON DELETE SET NULL
@@ -88,10 +94,18 @@ CREATE TABLE reservations (
     party_size INT,
     status ENUM('pending', 'confirmed', 'cancelled', 'completed') DEFAULT 'pending',
     special_requests TEXT,
+    deposit_status ENUM('not_required', 'pending', 'verified', 'rejected') DEFAULT 'not_required',
+    deposit_amount DECIMAL(10,2) DEFAULT 0.00,
+    deposit_payment_slip VARCHAR(255),
+    deposit_payment_date TIMESTAMP NULL,
+    deposit_verification_date TIMESTAMP NULL,
+    deposit_verified_by INT,
+    deposit_rejection_reason TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL,
-    FOREIGN KEY (restaurant_id) REFERENCES restaurants(restaurant_id) ON DELETE CASCADE
+    FOREIGN KEY (restaurant_id) REFERENCES restaurants(restaurant_id) ON DELETE CASCADE,
+    FOREIGN KEY (deposit_verified_by) REFERENCES users(user_id) ON DELETE SET NULL
 );
 
 -- Waitlist table
@@ -166,12 +180,26 @@ CREATE TABLE blocked_slots (
     FOREIGN KEY (restaurant_id) REFERENCES restaurants(restaurant_id) ON DELETE CASCADE
 );
 
+-- Contact Messages table
+CREATE TABLE contact_messages (
+    message_id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
 -- Create indexes for better performance
 CREATE INDEX idx_restaurant_location ON restaurants(latitude, longitude);
 CREATE INDEX idx_restaurant_cuisine ON restaurants(cuisine_type);
 CREATE INDEX idx_review_ratings ON reviews(overall_rating);
 CREATE INDEX idx_reservation_date ON reservations(reservation_date, reservation_time);
 CREATE INDEX idx_promotion_code ON promotions(code);
+CREATE INDEX idx_contact_messages_read ON contact_messages(is_read);
+CREATE INDEX idx_reservation_deposit_status ON reservations(deposit_status);
 
 -- Insert sample users (12345678)
 INSERT INTO users (username, email, password, role, first_name, last_name, phone, points) VALUES
@@ -188,9 +216,9 @@ INSERT INTO users (username, email, password, role, first_name, last_name, phone
 
 -- Insert sample restaurants
 INSERT INTO restaurants (owner_id, name, description, cuisine_type, address, latitude, longitude, phone, email, website, price_range, opening_hours, is_featured) VALUES
-(2, 'The Golden Spoon', 'Fine dining experience with modern cuisine', 'Contemporary', '123 Main St, City Center', 40.7128, -74.0060, '+1234567001', 'contact@goldenspoon.com', 'https://goldenspoon.com', '$$$', '{"monday":{"open":"11:00","close":"22:00"}}', true),
-(2, 'Pasta Paradise', 'Authentic Italian cuisine', 'Italian', '456 Oak Ave, Downtown', 40.7129, -74.0061, '+1234567002', 'info@pastaparadise.com', 'https://pastaparadise.com', '$$', '{"monday":{"open":"11:30","close":"23:00"}}', true),
-(3, 'Sushi Master', 'Premium Japanese dining', 'Japanese', '789 Pine St, Eastside', 40.7130, -74.0062, '+1234567003', 'hello@sushimaster.com', 'https://sushimaster.com', '$$$', '{"monday":{"open":"12:00","close":"22:30"}}', true),
+(2, 'The Golden Spoon', 'Fine dining experience with modern cuisine', 'Contemporary', '123 Main St, City Center', 16.811677779577018, 96.18408135252548, '+1234567001', 'contact@goldenspoon.com', 'https://goldenspoon.com', '$$$', '{"monday":{"open":"11:00","close":"22:00"}}', true),
+(2, 'Pasta Paradise', 'Authentic Italian cuisine', 'Italian', '456 Oak Ave, Downtown', 16.8094183019857, 96.1782663234962, '+1234567002', 'info@pastaparadise.com', 'https://pastaparadise.com', '$$', '{"monday":{"open":"11:30","close":"23:00"}}', true),
+(3, 'Sushi Master', 'Premium Japanese dining', 'Japanese', '789 Pine St, Eastside', 16.809413728857, 96.1782543234962, '+1234567003', 'hello@sushimaster.com', 'https://sushimaster.com', '$$$', '{"monday":{"open":"12:00","close":"22:30"}}', true),
 (3, 'Taco Fiesta', 'Vibrant Mexican street food', 'Mexican', '321 Elm St, Westside', 40.7131, -74.0063, '+1234567004', 'hola@tacofiesta.com', 'https://tacofiesta.com', '$', '{"monday":{"open":"10:00","close":"21:00"}}', true),
 (9, 'Burger Bliss', 'Gourmet burgers and shakes', 'American', '654 Maple Dr, Northside', 40.7132, -74.0064, '+1234567005', 'eat@burgerbliss.com', 'https://burgerbliss.com', '$$', '{"monday":{"open":"11:00","close":"23:00"}}', true),
 (9, 'Spice Route', 'Authentic Indian cuisine', 'Indian', '987 Cedar Ln, Southside', 40.7133, -74.0065, '+1234567006', 'namaste@spiceroute.com', 'https://spiceroute.com', '$$', '{"monday":{"open":"11:30","close":"22:30"}}', true),

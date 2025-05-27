@@ -73,6 +73,22 @@
                             <span>Confirmed</span>
                         </a>
                     </li>
+                    <!-- <li class="nav-item">
+                        <a href="deposit_verifications.php" class="nav-link">
+                            <i class="fas fa-money-check-alt"></i>
+                            <span>Deposit Verifications</span>
+                            <?php
+                            // Count pending deposits
+                            $pending_deposits_query = "SELECT COUNT(*) as count FROM reservations WHERE deposit_status = 'pending'";
+                            $pending_result = $conn->query($pending_deposits_query);
+                            if ($pending_result && $pending_count = $pending_result->fetch_assoc()['count']) {
+                                if ($pending_count > 0) {
+                                    echo '<span class="badge bg-warning rounded-pill ms-auto">' . $pending_count . '</span>';
+                                }
+                            }
+                            ?>
+                        </a>
+                    </li> -->
                     <li class="nav-item">
                         <a href="reservation_calendar.php" class="nav-link">
                             <i class="fas fa-calendar-week"></i>
@@ -85,6 +101,20 @@
                 <span>Administration</span>
             </li>
             <li class="nav-item">
+                <a href="contact_messages.php" class="nav-link">
+                    <i class="fas fa-envelope"></i>
+                    <span>Contact Messages</span>
+                    <?php
+                    // Count unread messages
+                    $unread_count_query = "SELECT COUNT(*) as count FROM contact_messages WHERE is_read = 0";
+                    $unread_result = $conn->query($unread_count_query);
+                    if ($unread_result && $unread_count = $unread_result->fetch_assoc()['count']) {
+                        echo '<span class="badge bg-danger rounded-pill ms-auto">' . $unread_count . '</span>';
+                    }
+                    ?>
+                </a>
+            </li>
+            <!-- <li class="nav-item">
                 <a href="settings.php" class="nav-link">
                     <i class="fas fa-cog"></i>
                     <span>Settings</span>
@@ -101,7 +131,7 @@
                     <i class="fas fa-list"></i>
                     <span>Logs</span>
                 </a>
-            </li>
+            </li> -->
         </ul>
     </div>
     

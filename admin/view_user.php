@@ -369,32 +369,4 @@ if ($account_age->d > 0 || $account_age_text == '') {
     </div>
 </div>
 
-<script>
-$(document).ready(function() {
-    // Initialize DataTables for reservations
-    $('#reservationsTable').DataTable({
-        responsive: true,
-        order: [[1, 'desc']], // Sort by date column
-        pageLength: 5, // Show 5 entries per page
-        lengthMenu: [[5, 10, 25, -1], [5, 10, 25, "All"]],
-        columnDefs: [
-            { responsivePriority: 1, targets: [0, 1, 4] }, // Keep these columns visible on smaller screens
-            { responsivePriority: 2, targets: [2, 3] }
-        ]
-    });
-    
-    // Initialize DataTables for reviews
-    $('#reviewsTable').DataTable({
-        responsive: true,
-        order: [[3, 'desc']], // Sort by date column
-        pageLength: 5, // Show 5 entries per page
-        lengthMenu: [[5, 10, 25, -1], [5, 10, 25, "All"]],
-        columnDefs: [
-            { responsivePriority: 1, targets: [0, 1, 3] }, // Keep these columns visible on smaller screens
-            { responsivePriority: 2, targets: [2] }
-        ]
-    });
-});
-</script>
-
 <?php include 'includes/footer.php'; ?> 

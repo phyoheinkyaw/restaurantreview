@@ -88,6 +88,31 @@ if (!$admin) {
             margin-right: 0;
             margin-left: 0;
         }
+
+        /* Custom header styles */
+        .user-dropdown img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+        }
+        
+        /* RTL support for admin */
+        body.rtl-language .admin-sidebar {
+            left: auto;
+            right: 0;
+        }
+        body.rtl-language .admin-content {
+            margin-left: 0;
+            margin-right: 250px;
+        }
+        body.rtl-language .admin-content-expanded {
+            margin-right: 0;
+        }
+        @media (max-width: 992px) {
+            body.rtl-language .admin-content {
+                margin-right: 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -135,7 +160,8 @@ if (!$admin) {
                 </div>
                 
                 <div class="d-flex align-items-center">
-                    <div class="dropdown me-3">
+                    <!-- Notifications Dropdown -->
+                    <!-- <div class="dropdown me-3">
                         <button class="btn btn-light" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-bell position-relative">
                                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
@@ -181,7 +207,7 @@ if (!$admin) {
                             <div class="dropdown-divider"></div>
                             <a class="dropdown-item text-center" href="#">View all notifications</a>
                         </div>
-                    </div>
+                    </div> -->
                     
                     <div class="dropdown">
                         <button class="btn p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -200,10 +226,10 @@ if (!$admin) {
                             </div>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="profile.php"><i class="fas fa-user me-2"></i> Profile</a></li>
-                            <li><a class="dropdown-item" href="settings.php"><i class="fas fa-cog me-2"></i> Settings</a></li>
+                            <li><a class="dropdown-item" href="../profile.php" data-i18n="profile"><i class="fas fa-user me-2"></i> Profile</a></li>
+                            <!-- <li><a class="dropdown-item" href="settings.php" data-i18n="settings"><i class="fas fa-cog me-2"></i> Settings</a></li> -->
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="../logout.php"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
+                            <li><a class="dropdown-item" href="../logout.php" data-i18n="logout"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
                         </ul>
                     </div>
                 </div>

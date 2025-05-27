@@ -52,6 +52,145 @@ $sql = "SELECT res.restaurant_id, res.name, res.image, res.cuisine_type,
         ORDER BY avg_rating DESC
         LIMIT 5";
 $top_restaurants = $conn->query($sql)->fetch_all(MYSQLI_ASSOC);
+
+// Count total reservations
+$stmt = $conn->query("SELECT COUNT(*) as count FROM reservations");
+$reservation_count = $stmt->fetch_assoc()['count'];
+
+// Count unread contact messages
+$stmt = $conn->query("SELECT COUNT(*) as count FROM contact_messages WHERE is_read = 0");
+$unread_messages_count = $stmt->fetch_assoc()['count'];
+
+// Recent activity (latest reservations)
+$stmt = $conn->query("
+    SELECT r.name, res.reservation_date, res.reservation_time, res.status, 
+           u.username, res.created_at
+    FROM reservations res
+    JOIN restaurants r ON res.restaurant_id = r.restaurant_id
+    JOIN users u ON res.user_id = u.user_id
+    ORDER BY res.created_at DESC
+    LIMIT 5
+");
+$recent_reservations = $stmt->fetch_all(MYSQLI_ASSOC);
+
+// Recent contact messages
+$stmt = $conn->query("
+    SELECT name, email, subject, created_at, is_read
+    FROM contact_messages
+    ORDER BY created_at DESC
+    LIMIT 5
+");
+$recent_messages = $stmt->fetch_all(MYSQLI_ASSOC);
+
+// Get monthly review counts for the chart
+$sql = "SELECT 
+            MONTH(created_at) as month,
+            COUNT(*) as review_count
+        FROM reviews
+        WHERE YEAR(created_at) = YEAR(CURDATE())
+        GROUP BY MONTH(created_at)
+        ORDER BY month";
+$result = $conn->query($sql);
+$monthly_reviews = array_fill(0, 12, 0); // Initialize with zeros for all months
+
+if ($result) {
+    while ($row = $result->fetch_assoc()) {
+        $month_index = (int)$row['month'] - 1; // Adjust to 0-based index
+        $monthly_reviews[$month_index] = (int)$row['review_count'];
+    }
+}
+
+// Get rating distribution for the pie chart
+$sql = "SELECT 
+            FLOOR(overall_rating) as rating,
+            COUNT(*) as count
+        FROM reviews
+        GROUP BY FLOOR(overall_rating)
+        ORDER BY rating";
+$result = $conn->query($sql);
+$rating_distribution = array_fill(0, 5, 0); // Initialize with zeros for 1-5 stars
+
+if ($result) {
+    while ($row = $result->fetch_assoc()) {
+        $rating_index = (int)$row['rating'] - 1; // Adjust to 0-based index
+        if ($rating_index >= 0 && $rating_index < 5) {
+            $rating_distribution[$rating_index] = (int)$row['count'];
+        }
+    }
+}
+
+// Get cuisine distribution for the chart
+$sql = "SELECT 
+            cuisine_type,
+            COUNT(*) as count
+        FROM restaurants
+        WHERE cuisine_type IS NOT NULL AND cuisine_type != ''
+        GROUP BY cuisine_type
+        ORDER BY count DESC
+        LIMIT 6";
+$result = $conn->query($sql);
+$cuisine_data = [];
+$cuisine_labels = [];
+
+if ($result) {
+    while ($row = $result->fetch_assoc()) {
+        $cuisine_labels[] = $row['cuisine_type'];
+        $cuisine_data[] = (int)$row['count'];
+    }
+}
+
+// Get monthly trends for stats cards
+$sql = "SELECT COUNT(*) as count FROM restaurants WHERE MONTH(created_at) = MONTH(CURDATE())";
+$result = $conn->query($sql);
+$current_month_restaurants = $result->fetch_assoc()['count'];
+
+$sql = "SELECT COUNT(*) as count FROM restaurants WHERE MONTH(created_at) = MONTH(CURDATE() - INTERVAL 1 MONTH)";
+$result = $conn->query($sql);
+$last_month_restaurants = $result->fetch_assoc()['count'];
+
+$restaurant_growth = 0;
+if ($last_month_restaurants > 0) {
+    $restaurant_growth = round((($current_month_restaurants - $last_month_restaurants) / $last_month_restaurants) * 100);
+}
+
+$sql = "SELECT COUNT(*) as count FROM users WHERE MONTH(created_at) = MONTH(CURDATE())";
+$result = $conn->query($sql);
+$current_month_users = $result->fetch_assoc()['count'];
+
+$sql = "SELECT COUNT(*) as count FROM users WHERE MONTH(created_at) = MONTH(CURDATE() - INTERVAL 1 MONTH)";
+$result = $conn->query($sql);
+$last_month_users = $result->fetch_assoc()['count'];
+
+$user_growth = 0;
+if ($last_month_users > 0) {
+    $user_growth = round((($current_month_users - $last_month_users) / $last_month_users) * 100);
+}
+
+$sql = "SELECT COUNT(*) as count FROM reviews WHERE MONTH(created_at) = MONTH(CURDATE())";
+$result = $conn->query($sql);
+$current_month_reviews = $result->fetch_assoc()['count'];
+
+$sql = "SELECT COUNT(*) as count FROM reviews WHERE MONTH(created_at) = MONTH(CURDATE() - INTERVAL 1 MONTH)";
+$result = $conn->query($sql);
+$last_month_reviews = $result->fetch_assoc()['count'];
+
+$review_growth = 0;
+if ($last_month_reviews > 0) {
+    $review_growth = round((($current_month_reviews - $last_month_reviews) / $last_month_reviews) * 100);
+}
+
+$sql = "SELECT AVG(overall_rating) as avg_rating FROM reviews WHERE MONTH(created_at) = MONTH(CURDATE())";
+$result = $conn->query($sql);
+$current_month_rating = $result->fetch_assoc()['avg_rating'] ?? 0;
+
+$sql = "SELECT AVG(overall_rating) as avg_rating FROM reviews WHERE MONTH(created_at) = MONTH(CURDATE() - INTERVAL 1 MONTH)";
+$result = $conn->query($sql);
+$last_month_rating = $result->fetch_assoc()['avg_rating'] ?? 0;
+
+$rating_growth = 0;
+if ($last_month_rating > 0) {
+    $rating_growth = number_format($current_month_rating - $last_month_rating, 1);
+}
 ?>
 
 <!-- Dashboard Header -->
@@ -60,24 +199,11 @@ $top_restaurants = $conn->query($sql)->fetch_all(MYSQLI_ASSOC);
         <h1 class="h3">Admin Dashboard</h1>
         <p class="text-muted">Welcome back, <?php echo $admin['first_name']; ?>! Here's what's happening today.</p>
     </div>
-    <div class="col-md-6 text-md-end">
-        <div class="btn-group">
-            <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
-                <i class="fas fa-calendar me-2"></i> Today
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-                <li><a class="dropdown-item" href="#">Today</a></li>
-                <li><a class="dropdown-item" href="#">Yesterday</a></li>
-                <li><a class="dropdown-item" href="#">Last 7 Days</a></li>
-                <li><a class="dropdown-item" href="#">Last 30 Days</a></li>
-                <li><a class="dropdown-item" href="#">This Month</a></li>
-                <li><a class="dropdown-item" href="#">Last Month</a></li>
-            </ul>
-        </div>
-        <a href="reports.php" class="btn btn-primary ms-2">
+    <!-- <div class="col-md-6 text-md-end">
+        <a href="export_report.php" class="btn btn-primary">
             <i class="fas fa-download me-2"></i> Export Report
         </a>
-    </div>
+    </div> -->
 </div>
 
 <!-- Stats Cards -->
@@ -89,8 +215,9 @@ $top_restaurants = $conn->query($sql)->fetch_all(MYSQLI_ASSOC);
             </div>
             <h6 class="card-title">Total Restaurants</h6>
             <h2 class="card-value"><?php echo $stats['restaurants']; ?></h2>
-            <div class="card-trend up">
-                <i class="fas fa-arrow-up me-1"></i> 12% from last month
+            <div class="card-trend <?php echo $restaurant_growth >= 0 ? 'up' : 'down'; ?>">
+                <i class="fas fa-arrow-<?php echo $restaurant_growth >= 0 ? 'up' : 'down'; ?> me-1"></i> 
+                <?php echo abs($restaurant_growth); ?>% from last month
             </div>
         </div>
     </div>
@@ -101,8 +228,9 @@ $top_restaurants = $conn->query($sql)->fetch_all(MYSQLI_ASSOC);
             </div>
             <h6 class="card-title">Total Users</h6>
             <h2 class="card-value"><?php echo $stats['users']; ?></h2>
-            <div class="card-trend up">
-                <i class="fas fa-arrow-up me-1"></i> 8% from last month
+            <div class="card-trend <?php echo $user_growth >= 0 ? 'up' : 'down'; ?>">
+                <i class="fas fa-arrow-<?php echo $user_growth >= 0 ? 'up' : 'down'; ?> me-1"></i> 
+                <?php echo abs($user_growth); ?>% from last month
             </div>
         </div>
     </div>
@@ -113,8 +241,9 @@ $top_restaurants = $conn->query($sql)->fetch_all(MYSQLI_ASSOC);
             </div>
             <h6 class="card-title">Total Reviews</h6>
             <h2 class="card-value"><?php echo $stats['reviews']; ?></h2>
-            <div class="card-trend up">
-                <i class="fas fa-arrow-up me-1"></i> 15% from last month
+            <div class="card-trend <?php echo $review_growth >= 0 ? 'up' : 'down'; ?>">
+                <i class="fas fa-arrow-<?php echo $review_growth >= 0 ? 'up' : 'down'; ?> me-1"></i> 
+                <?php echo abs($review_growth); ?>% from last month
             </div>
         </div>
     </div>
@@ -125,8 +254,9 @@ $top_restaurants = $conn->query($sql)->fetch_all(MYSQLI_ASSOC);
             </div>
             <h6 class="card-title">Average Rating</h6>
             <h2 class="card-value"><?php echo $stats['avg_rating']; ?>/5</h2>
-            <div class="card-trend up">
-                <i class="fas fa-arrow-up me-1"></i> 0.2 from last month
+            <div class="card-trend <?php echo $rating_growth >= 0 ? 'up' : 'down'; ?>">
+                <i class="fas fa-arrow-<?php echo $rating_growth >= 0 ? 'up' : 'down'; ?> me-1"></i> 
+                <?php echo abs($rating_growth); ?> from last month
             </div>
         </div>
     </div>
@@ -138,11 +268,6 @@ $top_restaurants = $conn->query($sql)->fetch_all(MYSQLI_ASSOC);
         <div class="chart-container">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h5 class="chart-title mb-0">Reviews Overview</h5>
-                <div class="btn-group">
-                    <button type="button" class="btn btn-sm btn-outline-secondary active">Monthly</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary">Weekly</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary">Daily</button>
-                </div>
             </div>
             <div style="height: 300px;">
                 <canvas id="revenueChart"></canvas>
@@ -155,7 +280,7 @@ $top_restaurants = $conn->query($sql)->fetch_all(MYSQLI_ASSOC);
                 <h5 class="chart-title mb-0">Rating Distribution</h5>
             </div>
             <div style="height: 300px;">
-                <canvas id="reviewsChart"></canvas>
+                <canvas id="reviewsDistChart"></canvas>
             </div>
         </div>
     </div>
@@ -450,6 +575,114 @@ $top_restaurants = $conn->query($sql)->fetch_all(MYSQLI_ASSOC);
     </div>
 </div>
 
+<!-- Recent Reservations -->
+<div class="row mt-4">
+    <div class="col-md-6 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold">Recent Reservations</h6>
+                <a href="reservations.php" class="btn btn-sm btn-primary">View All</a>
+            </div>
+            <div class="card-body">
+                <?php if (count($recent_reservations) > 0): ?>
+                    <table class="table table-sm table-striped">
+                        <thead>
+                            <tr>
+                                <th>Restaurant</th>
+                                <th>User</th>
+                                <th>Date/Time</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($recent_reservations as $reservation): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($reservation['name']); ?></td>
+                                    <td><?php echo htmlspecialchars($reservation['username']); ?></td>
+                                    <td>
+                                        <?php 
+                                        $date = new DateTime($reservation['reservation_date'] . ' ' . $reservation['reservation_time']);
+                                        echo $date->format('M d, Y g:i A');
+                                        ?>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-<?php 
+                                        echo match($reservation['status']) {
+                                            'pending' => 'warning',
+                                            'confirmed' => 'success',
+                                            'cancelled' => 'danger',
+                                            'completed' => 'info',
+                                            default => 'secondary'
+                                        };
+                                        ?>">
+                                            <?php echo ucfirst($reservation['status']); ?>
+                                        </span>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php else: ?>
+                    <div class="text-center py-4">
+                        <p class="text-muted">No recent reservations found</p>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Contact Messages -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold">Recent Contact Messages</h6>
+                <a href="contact_messages.php" class="btn btn-sm btn-primary">View All</a>
+            </div>
+            <div class="card-body">
+                <?php if (count($recent_messages) > 0): ?>
+                    <table class="table table-sm table-striped">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Subject</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($recent_messages as $message): ?>
+                                <tr class="<?php echo $message['is_read'] ? '' : 'fw-bold'; ?>">
+                                    <td><?php echo htmlspecialchars($message['name']); ?></td>
+                                    <td><?php echo htmlspecialchars($message['email']); ?></td>
+                                    <td><?php echo htmlspecialchars($message['subject']); ?></td>
+                                    <td>
+                                        <?php 
+                                        $date = new DateTime($message['created_at']);
+                                        echo $date->format('M d, Y g:i A');
+                                        ?>
+                                    </td>
+                                    <td>
+                                        <?php if ($message['is_read']): ?>
+                                            <span class="badge bg-success">Read</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-danger">Unread</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php else: ?>
+                    <div class="text-center py-4">
+                        <p class="text-muted">No contact messages found</p>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
 .bg-primary-light {
     background-color: rgba(234, 158, 11, 0.1);
@@ -472,10 +705,95 @@ $top_restaurants = $conn->query($sql)->fetch_all(MYSQLI_ASSOC);
     justify-content: center;
     font-size: 1.5rem;
 }
+.card-trend.up {
+    color: #28a745;
+}
+.card-trend.down {
+    color: #dc3545;
+}
 </style>
 
 <script>
-// Initialize charts
+// Initialize charts with real data
+document.addEventListener('DOMContentLoaded', function() {
+    // Reviews Chart
+    const reviewsCtx = document.getElementById('revenueChart');
+    if (reviewsCtx) {
+        new Chart(reviewsCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'Reviews',
+                    data: <?php echo json_encode($monthly_reviews); ?>,
+                    borderColor: '#ea9e0b',
+                    backgroundColor: 'rgba(234, 158, 11, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            title: function(context) {
+                                const labels = ['January', 'February', 'March', 'April', 'May', 'June', 
+                                               'July', 'August', 'September', 'October', 'November', 'December'];
+                                return labels[context[0].dataIndex];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            precision: 0
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Rating Distribution Chart
+    const reviewsDistCtx = document.getElementById('reviewsDistChart');
+    if (reviewsDistCtx) {
+        new Chart(reviewsDistCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['5 Stars', '4 Stars', '3 Stars', '2 Stars', '1 Star'],
+                datasets: [{
+                    data: <?php echo json_encode(array_reverse($rating_distribution)); ?>,
+                    backgroundColor: ['#2dc2a3', '#6cc070', '#ea9e0b', '#f27c4d', '#e74c3c']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                },
+                cutout: '70%'
+            }
+        });
+    }
+});
 </script>
 
 <?php

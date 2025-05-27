@@ -20,9 +20,23 @@ if (!$owner) {
 
 // Update session with new restaurant ID
 if (isset($_POST['restaurant_id'])) {
-    $_SESSION['current_restaurant_id'] = intval($_POST['restaurant_id']);
+    $restaurant_id = intval($_POST['restaurant_id']);
+    
+    // Verify that this restaurant belongs to the owner
+    $sql = "SELECT restaurant_id FROM restaurants WHERE restaurant_id = ? AND owner_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ii", $restaurant_id, $_SESSION['user_id']);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        $_SESSION['current_restaurant_id'] = $restaurant_id;
+    }
 }
 
+// Get the referring page or default to index
+$redirect = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : 'index.php';
+
 // Redirect back to the previous page
-header("Location: " . $_SERVER['HTTP_REFERER']);
+header("Location: " . $redirect);
 exit;

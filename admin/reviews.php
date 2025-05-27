@@ -393,17 +393,7 @@ if ($result) {
 </div>
 
 <script>
-$(document).ready(function() {
-    $('#reviewsTable').DataTable({
-        responsive: true,
-        order: [[5, 'desc']], // Sort by date column (index 5) in descending order
-        columnDefs: [
-            { responsivePriority: 1, targets: [1, 2, 3, 6] }, // Keep these columns visible on smaller screens
-            { responsivePriority: 2, targets: [0, 5] },
-            { responsivePriority: 3, targets: 4 }
-        ]
-    });
-});
+// The DataTable initialization is now handled centrally in admin.js
 </script>
 
 <?php include 'includes/footer.php'; ?> 
