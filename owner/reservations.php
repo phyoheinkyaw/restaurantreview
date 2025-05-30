@@ -54,6 +54,19 @@ if (!$restaurant) {
     exit;
 }
 
+// Get reservation statistics
+$sql = "SELECT 
+        COUNT(*) as total_reservations,
+        COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_reservations,
+        COUNT(CASE WHEN status = 'confirmed' THEN 1 END) as confirmed_reservations
+        FROM reservations 
+        WHERE restaurant_id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $restaurant_id);
+$stmt->execute();
+$reservation_stats = $stmt->get_result()->fetch_assoc();
+$stmt->close();
+
 // Helper: check if a reservation time is blocked
 function is_time_blocked($restaurant_id, $date, $time, $conn) {
     $stmt = $conn->prepare("SELECT * FROM blocked_slots WHERE restaurant_id = ? AND block_date = ? AND ? >= block_time_start AND ? < block_time_end");
@@ -66,7 +79,7 @@ function is_time_blocked($restaurant_id, $date, $time, $conn) {
 }
 
 // Get all reservations for the current restaurant
-$sql = "SELECT r.*, u.username, u.email, u.phone 
+$sql = "SELECT r.*, u.username, u.first_name, u.last_name, u.email, u.phone 
         FROM reservations r 
         JOIN users u ON r.user_id = u.user_id 
         WHERE r.restaurant_id = ? 
@@ -82,6 +95,34 @@ $stmt->close();
     <div class="row">
         <div class="col-md-12">
             <h2 class="mb-4">Reservations - <?php echo htmlspecialchars($restaurant['name']); ?></h2>
+            
+            <!-- Reservation Statistics -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Reservations</h5>
+                            <h2 class="card-text"><?php echo $reservation_stats['total_reservations']; ?></h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Pending Reservations</h5>
+                            <h2 class="card-text"><?php echo $reservation_stats['pending_reservations']; ?></h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Confirmed Reservations</h5>
+                            <h2 class="card-text"><?php echo $reservation_stats['confirmed_reservations']; ?></h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
             <div class="card">
                 <div class="card-header">
@@ -109,7 +150,15 @@ $stmt->close();
                                     <td><?php echo date('Y-m-d', strtotime($reservation['reservation_date'])); ?></td>
                                     <td><?php echo date('H:i', strtotime($reservation['reservation_time'])); ?></td>
                                     <td>
-                                        <strong><?php echo htmlspecialchars($reservation['username']); ?></strong><br>
+                                        <strong>
+                                            <?php 
+                                            echo htmlspecialchars(
+                                                (!empty($reservation['first_name']) && !empty($reservation['last_name'])) ? 
+                                                $reservation['first_name'] . ' ' . $reservation['last_name'] : 
+                                                $reservation['username']
+                                            ); 
+                                            ?>
+                                        </strong><br>
                                         <small><?php echo htmlspecialchars($reservation['email']); ?></small><br>
                                         <small><?php echo htmlspecialchars($reservation['phone']); ?></small>
                                     </td>

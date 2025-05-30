@@ -247,47 +247,49 @@ if ($has_restaurants) {
                     <a href="reservations.php" class="btn btn-sm btn-primary">View All</a>
                 </div>
                 <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
+                    <table class="table table-hover table-striped mb-0">
+                        <thead class="table-light">
                             <tr>
                                 <th>Customer</th>
-                                <th>Date</th>
-                                <th>Time</th>
+                                <th>Date & Time</th>
+                                <th>Party Size</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if (!empty($recent_reservations)): ?>
+                            <?php if (empty($recent_reservations)): ?>
+                                <tr>
+                                    <td colspan="4" class="text-center py-3">No recent reservations</td>
+                                </tr>
+                            <?php else: ?>
                                 <?php foreach ($recent_reservations as $reservation): ?>
                                     <tr>
                                         <td>
-                                            <?php 
-                                            echo !empty($reservation['first_name']) ? 
-                                                htmlspecialchars($reservation['first_name'] . ' ' . $reservation['last_name']) :
-                                                htmlspecialchars($reservation['username']);
-                                            ?>
+                                            <div class="d-flex align-items-center">
+                                                <div class="rounded-circle bg-light text-dark d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
+                                                    <?php echo strtoupper(substr((!empty($reservation['first_name']) && !empty($reservation['last_name'])) ? $reservation['first_name'] : $reservation['username'], 0, 1)); ?>
+                                                </div>
+                                                <?php 
+                                                echo htmlspecialchars(
+                                                    (!empty($reservation['first_name']) && !empty($reservation['last_name'])) ? 
+                                                    $reservation['first_name'] . ' ' . $reservation['last_name'] : 
+                                                    $reservation['username']
+                                                ); 
+                                                ?>
+                                            </div>
                                         </td>
-                                        <td><?php echo date('M d, Y', strtotime($reservation['reservation_date'])); ?></td>
-                                        <td><?php echo date('g:i A', strtotime($reservation['reservation_time'])); ?></td>
+                                        <td><?php echo date('M d, Y g:i A', strtotime($reservation['reservation_date'] . ' ' . $reservation['reservation_time'])); ?></td>
+                                        <td><?php echo $reservation['party_size']; ?></td>
                                         <td>
-                                            <?php
-                                            $status_class = [
-                                                'pending' => 'bg-warning',
-                                                'confirmed' => 'bg-success',
-                                                'completed' => 'bg-info',
-                                                'cancelled' => 'bg-danger'
-                                            ][$reservation['status']] ?? 'bg-secondary';
-                                            ?>
-                                            <span class="badge <?php echo $status_class; ?>">
+                                            <span class="badge bg-<?php 
+                                                echo $reservation['status'] == 'confirmed' ? 'success' : 
+                                                    ($reservation['status'] == 'pending' ? 'warning' : 'danger'); 
+                                            ?>">
                                                 <?php echo ucfirst($reservation['status']); ?>
                                             </span>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
-                            <?php else: ?>
-                                <tr>
-                                    <td colspan="4" class="text-center text-muted">No recent reservations</td>
-                                </tr>
                             <?php endif; ?>
                         </tbody>
                     </table>
@@ -302,39 +304,51 @@ if ($has_restaurants) {
                     <a href="reviews.php" class="btn btn-sm btn-primary">View All</a>
                 </div>
                 <div class="card-body">
-                    <?php if (!empty($recent_reviews)): ?>
-                        <?php foreach ($recent_reviews as $review): ?>
-                            <div class="d-flex mb-4">
-                                <div class="flex-shrink-0">
-                                    <div class="avatar avatar-sm bg-primary-subtle text-primary rounded">
-                                        <?php echo strtoupper(substr($review['first_name'] ?: $review['username'], 0, 1)); ?>
-                                    </div>
-                                </div>
-                                <div class="flex-grow-1 ms-3">
-                                    <div class="d-flex align-items-center mb-1">
-                                        <h6 class="mb-0">
-                                            <?php 
-                                            echo !empty($review['first_name']) ? 
-                                                htmlspecialchars($review['first_name'] . ' ' . $review['last_name']) :
-                                                htmlspecialchars($review['username']);
-                                            ?>
-                                        </h6>
-                                        <div class="ms-2">
-                                            <?php for ($i = 1; $i <= 5; $i++): ?>
-                                                <i class="fas fa-star <?php echo $i <= $review['overall_rating'] ? 'text-warning' : 'text-muted'; ?>"></i>
-                                            <?php endfor; ?>
-                                        </div>
-                                        <small class="text-muted ms-auto">
-                                            <?php echo timeAgo($review['created_at']); ?>
-                                        </small>
-                                    </div>
-                                    <p class="mb-0"><?php echo htmlspecialchars($review['comment']); ?></p>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <p class="text-center text-muted">No recent reviews</p>
-                    <?php endif; ?>
+                    <table class="table table-hover table-striped mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Customer</th>
+                                <th>Rating</th>
+                                <th>Comment</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($recent_reviews)): ?>
+                                <tr>
+                                    <td colspan="4" class="text-center py-3">No recent reviews</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($recent_reviews as $review): ?>
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="rounded-circle bg-light text-dark d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
+                                                    <?php echo strtoupper(substr((!empty($review['first_name']) && !empty($review['last_name'])) ? $review['first_name'] : $review['username'], 0, 1)); ?>
+                                                </div>
+                                                <?php 
+                                                echo htmlspecialchars(
+                                                    (!empty($review['first_name']) && !empty($review['last_name'])) ? 
+                                                    $review['first_name'] . ' ' . $review['last_name'] : 
+                                                    $review['username']
+                                                ); 
+                                                ?>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex">
+                                                <?php for($i = 1; $i <= 5; $i++): ?>
+                                                    <i class="fas fa-star me-1 <?php echo $i <= $review['overall_rating'] ? 'text-warning' : 'text-muted'; ?>"></i>
+                                                <?php endfor; ?>
+                                            </div>
+                                        </td>
+                                        <td><?php echo strlen($review['comment']) > 50 ? htmlspecialchars(substr($review['comment'], 0, 50)) . '...' : htmlspecialchars($review['comment']); ?></td>
+                                        <td><?php echo date('M d, Y', strtotime($review['created_at'])); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

@@ -55,7 +55,7 @@ if (!$restaurant) {
 }
 
 // Get reviews for the restaurant
-$sql = "SELECT r.*, u.first_name, u.last_name, u.profile_image FROM reviews r LEFT JOIN users u ON r.user_id = u.user_id WHERE r.restaurant_id = ? ORDER BY r.created_at DESC";
+$sql = "SELECT r.*, u.username, u.first_name, u.last_name, u.profile_image FROM reviews r LEFT JOIN users u ON r.user_id = u.user_id WHERE r.restaurant_id = ? ORDER BY r.created_at DESC";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $restaurant_id);
 $stmt->execute();
@@ -153,7 +153,15 @@ $average_rating = $total_reviews > 0 ? round($total_rating / $total_reviews, 1) 
                                                 <?php else: ?>
                                                     <i class="fas fa-user-circle fa-2x text-secondary me-2"></i>
                                                 <?php endif; ?>
-                                                <span><?php echo htmlspecialchars($review['first_name'] . ' ' . $review['last_name']); ?></span>
+                                                <span>
+                                                    <?php 
+                                                    echo htmlspecialchars(
+                                                        (!empty($review['first_name']) && !empty($review['last_name'])) ? 
+                                                        $review['first_name'] . ' ' . $review['last_name'] : 
+                                                        $review['username']
+                                                    ); 
+                                                    ?>
+                                                </span>
                                             </td>
                                             <td class="review-rating" data-rating="<?php echo (int)round($review['overall_rating']); ?>">
                                                 <?php for ($i = 1; $i <= 5; $i++): ?>

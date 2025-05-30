@@ -358,13 +358,22 @@ $all_notifications = array_slice($all_notifications, $offset, $per_page);
                                                     </form>
                                                 <?php endif; ?>
                                                 
-                                                <?php if ($notification['type'] == 'reservation' || $notification['type'] == 'deposit'): ?>
+                                                <?php if ($notification['type'] == 'reservation'): ?>
                                                     <form method="POST" action="notification_redirect.php" class="d-inline">
                                                         <input type="hidden" name="type" value="reservation">
                                                         <input type="hidden" name="id" value="<?php echo $notification['id']; ?>">
                                                         <input type="hidden" name="restaurant_id" value="<?php echo $notification['restaurant_id']; ?>">
                                                         <button type="submit" class="btn btn-sm btn-primary">
                                                             <i class="fas fa-eye me-1"></i> View Details
+                                                        </button>
+                                                    </form>
+                                                <?php elseif ($notification['type'] == 'deposit'): ?>
+                                                    <form method="POST" action="notification_redirect.php" class="d-inline">
+                                                        <input type="hidden" name="type" value="deposit">
+                                                        <input type="hidden" name="id" value="<?php echo $notification['id']; ?>">
+                                                        <input type="hidden" name="restaurant_id" value="<?php echo $notification['restaurant_id']; ?>">
+                                                        <button type="submit" class="btn btn-sm btn-primary">
+                                                            <i class="fas fa-money-bill-wave me-1"></i> View Deposit
                                                         </button>
                                                     </form>
                                                 <?php elseif ($notification['type'] == 'review'): ?>
@@ -488,6 +497,9 @@ $all_notifications = array_slice($all_notifications, $offset, $per_page);
                         <?php if ($unread_reviews > 0): ?>
                             <span class="badge bg-danger rounded-pill float-end"><?php echo $unread_reviews; ?></span>
                         <?php endif; ?>
+                    </a>
+                    <a href="deposit_settings.php" class="list-group-item list-group-item-action">
+                        <i class="fas fa-money-bill-wave me-2"></i> Deposit Settings
                     </a>
                 </div>
             </div>

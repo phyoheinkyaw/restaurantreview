@@ -553,6 +553,8 @@ if ($has_restaurants) {
                                                             <i class="fas fa-calendar-alt text-primary"></i>
                                                         <?php elseif ($notification['type'] == 'review'): ?>
                                                             <i class="fas fa-star text-warning"></i>
+                                                        <?php elseif ($notification['type'] == 'deposit'): ?>
+                                                            <i class="fas fa-money-bill-wave text-success"></i>
                                                         <?php endif; ?>
                                                     </div>
                                                     <div>

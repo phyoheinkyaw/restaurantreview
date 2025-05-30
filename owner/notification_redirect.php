@@ -56,6 +56,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['type']) && isset($_PO
         // Redirect to reservations page
         header("Location: reservations.php");
         exit;
+    } elseif ($type === 'deposit') {
+        // Mark the deposit's reservation as read
+        $sql = "UPDATE reservations SET is_read = 1 
+                WHERE reservation_id = ? AND 
+                restaurant_id IN (SELECT restaurant_id FROM restaurants WHERE owner_id = ?)";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("ii", $id, $owner_id);
+        $stmt->execute();
+        $stmt->close();
+        
+        // Redirect to deposit settings page
+        header("Location: deposit_settings.php");
+        exit;
     }
 }
 

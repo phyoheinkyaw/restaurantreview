@@ -280,7 +280,7 @@ $stmt->close();
                                             <td><?php echo htmlspecialchars(substr($restaurant['address'], 0, 50) . (strlen($restaurant['address']) > 50 ? '...' : '')); ?></td>
                                             <td>
                                                 <span class="badge bg-info">
-                                                    <a href="restaurant_reviews.php?id=<?php echo $restaurant['restaurant_id']; ?>" 
+                                                    <a href="reviews.php?restaurant_id=<?php echo $restaurant['restaurant_id']; ?>" 
                                                        class="text-white text-decoration-none">
                                                         <?php echo $restaurant['review_count']; ?>
                                                     </a>
@@ -288,7 +288,7 @@ $stmt->close();
                                             </td>
                                             <td>
                                                 <span class="badge bg-success">
-                                                    <a href="restaurant_reservations.php?id=<?php echo $restaurant['restaurant_id']; ?>" 
+                                                    <a href="reservations.php?restaurant_id=<?php echo $restaurant['restaurant_id']; ?>" 
                                                        class="text-white text-decoration-none">
                                                         <?php echo $restaurant['reservation_count']; ?>
                                                     </a>
