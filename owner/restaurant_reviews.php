@@ -103,7 +103,7 @@ require_once 'includes/header.php';
 
                     <!-- Review List -->
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-hover" id="reviewsTable">
                             <thead>
                                 <tr>
                                     <th>Customer</th>
@@ -166,9 +166,40 @@ require_once 'includes/header.php';
     </div>
 </div>
 
+<!-- Add required CSS for DataTables -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap5.min.css">
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Add DataTables JS -->
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.2.9/js/responsive.bootstrap5.min.js"></script>
+
 <script>
 $(document).ready(function() {
+    // Initialize DataTable
+    $('#reviewsTable').DataTable({
+        responsive: true,
+        pageLength: 10,
+        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+        language: {
+            search: "_INPUT_",
+            searchPlaceholder: "Search reviews..."
+        },
+        columnDefs: [
+            { orderable: false, targets: [1] }, // Disable sorting on star rating column
+            { type: 'date', targets: 2 }, // Sort date column as date
+            { responsivePriority: 1, targets: [0, 3, 7] }, // Keep these columns visible on small screens
+            { responsivePriority: 2, targets: 2 }
+        ],
+        order: [[2, 'desc']] // Default sort by date desc
+    });
+    
     // Initialize review distribution chart
     const ctx = document.getElementById('reviewChart').getContext('2d');
     const ratings = {

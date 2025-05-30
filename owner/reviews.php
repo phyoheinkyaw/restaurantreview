@@ -1,10 +1,15 @@
 <?php
+// Start output buffering to prevent "headers already sent" errors
+ob_start();
+
 require_once 'includes/db_connect.php';
 require_once 'includes/header.php';
 
 // Handle restaurant selection (same as reservations.php)
 if (isset($_GET['restaurant_id'])) {
     $_SESSION['current_restaurant_id'] = intval($_GET['restaurant_id']);
+    
+    // Always redirect without parameters to avoid reprocessing
     header("Location: reviews.php");
     exit;
 }
@@ -16,6 +21,24 @@ if (!isset($_SESSION['current_restaurant_id'])) {
 }
 
 $restaurant_id = $_SESSION['current_restaurant_id'];
+
+// Check if a specific review ID is provided (from notification)
+$highlight_review_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+
+// If coming from notification, mark this review as read
+if ($highlight_review_id > 0) {
+    $mark_read_sql = "UPDATE reviews SET is_read = 1 
+                      WHERE review_id = ? AND 
+                      restaurant_id IN (SELECT restaurant_id FROM restaurants WHERE owner_id = ?)";
+    $stmt = $conn->prepare($mark_read_sql);
+    $stmt->bind_param("ii", $highlight_review_id, $owner['user_id']);
+    $stmt->execute();
+    $stmt->close();
+    
+    // Redirect to clean URL after processing the ID
+    header("Location: reviews.php");
+    exit;
+}
 
 // Get restaurant information
 $sql = "SELECT * FROM restaurants WHERE restaurant_id = ? AND owner_id = ?";
@@ -123,7 +146,7 @@ $average_rating = $total_reviews > 0 ? round($total_rating / $total_reviews, 1) 
                                 </thead>
                                 <tbody>
                                     <?php foreach ($reviews as $review): ?>
-                                        <tr>
+                                        <tr data-review-id="<?php echo $review['review_id']; ?>">
                                             <td class="review-username">
                                                 <?php if (!empty($review['profile_image'])): ?>
                                                     <img src="../uploads/profile/<?php echo htmlspecialchars($review['profile_image']); ?>" alt="User" class="rounded-circle me-2" width="40" height="40">
@@ -224,4 +247,55 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+<?php if ($highlight_review_id > 0): ?>
+<!-- Add red dot indicator for the highlighted review -->
+<style>
+.highlight-indicator {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #dc3545;
+    margin-right: 10px;
+}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Find the row containing the target review ID
+    const reviewId = <?php echo $highlight_review_id; ?>;
+    
+    // Look for the review
+    setTimeout(function() {
+        const row = document.querySelector('tr[data-review-id="' + reviewId + '"]');
+        if (row) {
+            // Add a relative position to the row for absolute positioning of the dot
+            row.style.position = 'relative';
+            
+            // Create and add the red dot indicator
+            const indicator = document.createElement('div');
+            indicator.className = 'highlight-indicator';
+            row.appendChild(indicator);
+            
+            // Scroll to the row
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Remove the indicator after 5 seconds
+            setTimeout(() => {
+                if (indicator.parentNode) {
+                    indicator.parentNode.removeChild(indicator);
+                }
+            }, 5000);
+        }
+    }, 800);
+});
+</script>
+<?php endif; ?>
+
 <?php require_once 'includes/footer.php'; ?>
+<?php 
+// Flush the output buffer and send content to browser
+ob_end_flush(); 
+?>

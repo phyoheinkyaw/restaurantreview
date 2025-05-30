@@ -94,6 +94,7 @@ try {
         parking_rating,
         comment,
         images,
+        is_read,
         created_at
     ) VALUES (
         :restaurant_id, 
@@ -106,6 +107,7 @@ try {
         :parking_rating,
         :comment,
         :images,
+        0,
         NOW()
     )";
 

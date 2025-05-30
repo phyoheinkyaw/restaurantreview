@@ -35,7 +35,7 @@ if (isset($_POST['restaurant_id'])) {
 }
 
 // Get the referring page or default to index
-$redirect = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : 'index.php';
+$redirect = isset($_POST['redirect']) ? $_POST['redirect'] : (isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : 'index.php');
 
 // Redirect back to the previous page
 header("Location: " . $redirect);

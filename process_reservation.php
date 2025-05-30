@@ -80,6 +80,7 @@ try {
         party_size,
         special_requests,
         status,
+        is_read,
         created_at
     ) VALUES (
         :restaurant_id, 
@@ -89,6 +90,7 @@ try {
         :party_size,
         :special_requests,
         'pending',
+        0,
         NOW()
     )";
 

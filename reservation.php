@@ -48,73 +48,86 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($reservation_date) || empty($reservation_time) || $party_size < 1) {
         $error_message = "Please fill all required fields.";
     } else {
-        // Create reservation record
-        if ($restaurant['deposit_required']) {
-            // If deposit is required, set status to pending
-            $deposit_status = 'pending';
-            $deposit_amount = $restaurant['deposit_amount'];
-            $reservation_status = 'pending';
-            
-            // Check if a payment slip was uploaded
-            $deposit_payment_slip = "";
-            if (isset($_FILES['deposit_payment_slip']) && $_FILES['deposit_payment_slip']['error'] === UPLOAD_ERR_OK) {
-                $upload_dir = "uploads/payment_slips/";
-                
-                // Create directory if it doesn't exist
-                if (!file_exists($upload_dir)) {
-                    mkdir($upload_dir, 0777, true);
-                }
-                
-                // Generate unique filename
-                $file_extension = pathinfo($_FILES['deposit_payment_slip']['name'], PATHINFO_EXTENSION);
-                $new_filename = uniqid('payment_') . '_' . time() . '.' . $file_extension;
-                $upload_path = $upload_dir . $new_filename;
-                
-                // Check file type
-                $allowed_types = ['image/jpeg', 'image/png', 'image/jpg'];
-                if (!in_array($_FILES['deposit_payment_slip']['type'], $allowed_types)) {
-                    $error_message = "Only JPG, JPEG, and PNG files are allowed.";
-                } else if ($_FILES['deposit_payment_slip']['size'] > 5000000) { // 5MB max
-                    $error_message = "File is too large. Maximum size is 5MB.";
-                } else if (move_uploaded_file($_FILES['deposit_payment_slip']['tmp_name'], $upload_path)) {
-                    $deposit_payment_slip = $upload_path;
-                } else {
-                    $error_message = "Failed to upload payment slip.";
-                }
-            } else {
-                $error_message = "Please upload your deposit payment slip.";
-            }
-        } else {
-            // If no deposit required, set status to not_required and confirm reservation
-            $deposit_status = 'not_required';
-            $deposit_amount = 0;
-            $reservation_status = 'confirmed';
-            $deposit_payment_slip = "";
-        }
+        // Check if the time slot is blocked
+        $stmt = $db->prepare("SELECT * FROM blocked_slots 
+                              WHERE restaurant_id = ? 
+                              AND block_date = ? 
+                              AND ? >= block_time_start 
+                              AND ? < block_time_end");
+        $stmt->execute([$restaurant_id, $reservation_date, $reservation_time, $reservation_time]);
+        $blocked = $stmt->fetch();
         
-        // If no errors, proceed with creating the reservation
-        if (!isset($error_message)) {
-            $sql = "INSERT INTO reservations (
-                        user_id, restaurant_id, reservation_date, reservation_time, 
-                        party_size, status, special_requests, 
-                        deposit_status, deposit_amount, deposit_payment_slip, deposit_payment_date
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
-            
-            $stmt = $db->prepare($sql);
-            $stmt->execute([
-                $user_id, $restaurant_id, $reservation_date, $reservation_time, 
-                $party_size, $reservation_status, $special_requests, 
-                $deposit_status, $deposit_amount, $deposit_payment_slip
-            ]);
-            
-            if ($stmt->rowCount() > 0) {
-                $reservation_id = $db->lastInsertId();
+        if ($blocked) {
+            $error_message = "Sorry, this time slot is no longer available. Please select another time.";
+        } else {
+            // Create reservation record
+            if ($restaurant['deposit_required']) {
+                // If deposit is required, set status to pending
+                $deposit_status = 'pending';
+                $deposit_amount = $restaurant['deposit_amount'];
+                $reservation_status = 'pending';
                 
-                // Redirect to confirmation page
-                header("Location: reservation_confirmation.php?id=" . $reservation_id);
-                exit;
+                // Check if a payment slip was uploaded
+                $deposit_payment_slip = "";
+                if (isset($_FILES['deposit_payment_slip']) && $_FILES['deposit_payment_slip']['error'] === UPLOAD_ERR_OK) {
+                    $upload_dir = "uploads/payment_slips/";
+                    
+                    // Create directory if it doesn't exist
+                    if (!file_exists($upload_dir)) {
+                        mkdir($upload_dir, 0777, true);
+                    }
+                    
+                    // Generate unique filename
+                    $file_extension = pathinfo($_FILES['deposit_payment_slip']['name'], PATHINFO_EXTENSION);
+                    $new_filename = uniqid('payment_') . '_' . time() . '.' . $file_extension;
+                    $upload_path = $upload_dir . $new_filename;
+                    
+                    // Check file type
+                    $allowed_types = ['image/jpeg', 'image/png', 'image/jpg'];
+                    if (!in_array($_FILES['deposit_payment_slip']['type'], $allowed_types)) {
+                        $error_message = "Only JPG, JPEG, and PNG files are allowed.";
+                    } else if ($_FILES['deposit_payment_slip']['size'] > 5000000) { // 5MB max
+                        $error_message = "File is too large. Maximum size is 5MB.";
+                    } else if (move_uploaded_file($_FILES['deposit_payment_slip']['tmp_name'], $upload_path)) {
+                        $deposit_payment_slip = $upload_path;
+                    } else {
+                        $error_message = "Failed to upload payment slip.";
+                    }
+                } else {
+                    $error_message = "Please upload your deposit payment slip.";
+                }
             } else {
-                $error_message = "Error creating reservation: " . $db->errorInfo()[2];
+                // If no deposit required, set status to not_required and confirm reservation
+                $deposit_status = 'not_required';
+                $deposit_amount = 0;
+                $reservation_status = 'confirmed';
+                $deposit_payment_slip = "";
+            }
+            
+            // If no errors, proceed with creating the reservation
+            if (!isset($error_message)) {
+                $sql = "INSERT INTO reservations (
+                            user_id, restaurant_id, reservation_date, reservation_time, 
+                            party_size, status, special_requests, 
+                            deposit_status, deposit_amount, deposit_payment_slip, deposit_payment_date
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                
+                $stmt = $db->prepare($sql);
+                $stmt->execute([
+                    $user_id, $restaurant_id, $reservation_date, $reservation_time, 
+                    $party_size, $reservation_status, $special_requests, 
+                    $deposit_status, $deposit_amount, $deposit_payment_slip
+                ]);
+                
+                if ($stmt->rowCount() > 0) {
+                    $reservation_id = $db->lastInsertId();
+                    
+                    // Redirect to confirmation page
+                    header("Location: reservation_confirmation.php?id=" . $reservation_id);
+                    exit;
+                } else {
+                    $error_message = "Error creating reservation: " . $db->errorInfo()[2];
+                }
             }
         }
     }
@@ -166,17 +179,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <h4 class="mb-0">Reservation Details</h4>
                     </div>
                     <div class="card-body">
-                        <form method="POST" action="" enctype="multipart/form-data">
+                        <form method="POST" action="" enctype="multipart/form-data" id="reservationForm">
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <label for="reservation_date" class="form-label">Date*</label>
                                     <input type="text" class="form-control" id="reservation_date" name="reservation_date" required>
+                                    <div id="date-feedback" class="invalid-feedback"></div>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="reservation_time" class="form-label">Time*</label>
                                     <select class="form-select" id="reservation_time" name="reservation_time" required disabled>
                                         <option value="">Select a date first</option>
                                     </select>
+                                    <div id="time-feedback" class="invalid-feedback"></div>
                                 </div>
                             </div>
                             
@@ -250,7 +265,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <?php endif; ?>
                             
                             <div class="mt-4">
-                                <button type="submit" class="btn btn-primary">
+                                <button type="submit" class="btn btn-primary" id="submitButton">
                                     <i class="fas fa-calendar-check me-1"></i> Complete Reservation
                                 </button>
                                 <a href="restaurant.php?id=<?php echo $restaurant_id; ?>" class="btn btn-outline-secondary ms-2">Cancel</a>
@@ -314,6 +329,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const reservationForm = document.getElementById('reservationForm');
+            const submitButton = document.getElementById('submitButton');
+            const dateFeedback = document.getElementById('date-feedback');
+            const timeFeedback = document.getElementById('time-feedback');
+            const dateInput = document.getElementById('reservation_date');
+            const timeSelect = document.getElementById('reservation_time');
+            
             // Initialize date picker
             flatpickr("#reservation_date", {
                 minDate: "today",
@@ -322,7 +344,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 onChange: function(selectedDates, dateStr) {
                     // When date changes, fetch available time slots
                     if (dateStr) {
-                        const timeSelect = document.getElementById('reservation_time');
+                        // Reset validation states
+                        dateInput.classList.remove('is-invalid');
+                        dateFeedback.textContent = '';
+                        
                         timeSelect.disabled = true;
                         timeSelect.innerHTML = '<option value="">Loading time slots...</option>';
                         
@@ -340,13 +365,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     // Handle no time slots
                                     timeSelect.innerHTML = '<option value="">No available time slots</option>';
                                 } else {
+                                    // First create optgroup for available slots
+                                    const availableGroup = document.createElement('optgroup');
+                                    availableGroup.label = 'Available Times';
+                                    
+                                    // Then create optgroup for unavailable slots
+                                    const unavailableGroup = document.createElement('optgroup');
+                                    unavailableGroup.label = 'Unavailable Times';
+                                    
+                                    // Track if we have any available times
+                                    let hasAvailableTimes = false;
+                                    
                                     // Add time slots
-                                    data.forEach(time => {
+                                    data.forEach(slot => {
                                         const option = document.createElement('option');
-                                        option.value = time;
-                                        option.textContent = time;
-                                        timeSelect.appendChild(option);
+                                        option.value = slot.available ? slot.time : '';
+                                        option.textContent = slot.time;
+                                        
+                                        if (slot.available) {
+                                            availableGroup.appendChild(option);
+                                            hasAvailableTimes = true;
+                                        } else {
+                                            option.disabled = true;
+                                            option.textContent = `${slot.time} - ${slot.reason}`;
+                                            option.classList.add('text-danger');
+                                            unavailableGroup.appendChild(option);
+                                        }
                                     });
+                                    
+                                    // Add groups to select element
+                                    if (hasAvailableTimes) {
+                                        timeSelect.appendChild(availableGroup);
+                                    } else {
+                                        // If no available times, add a disabled option
+                                        const noOption = document.createElement('option');
+                                        noOption.value = '';
+                                        noOption.textContent = 'No available times for this date';
+                                        timeSelect.appendChild(noOption);
+                                    }
+                                    
+                                    // Add unavailable times if there are any
+                                    if (unavailableGroup.children.length > 0) {
+                                        timeSelect.appendChild(unavailableGroup);
+                                    }
                                 }
                                 
                                 timeSelect.disabled = false;
@@ -355,11 +416,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 console.error('Fetch error:', error);
                                 timeSelect.innerHTML = '<option value="">Error loading time slots. Please try again.</option>';
                                 timeSelect.disabled = false;
-                                
-                                // Show alert with error details for debugging
-                                alert('Error fetching time slots: ' + error.message);
                             });
                     }
+                }
+            });
+            
+            // Form validation before submission
+            reservationForm.addEventListener('submit', function(event) {
+                let isValid = true;
+                
+                // Check if date is selected
+                if (!dateInput.value) {
+                    dateInput.classList.add('is-invalid');
+                    dateFeedback.textContent = 'Please select a date';
+                    isValid = false;
+                }
+                
+                // Check if time is selected
+                if (!timeSelect.value) {
+                    timeSelect.classList.add('is-invalid');
+                    timeFeedback.textContent = 'Please select a time';
+                    isValid = false;
+                }
+                
+                if (!isValid) {
+                    event.preventDefault();
                 }
             });
             

@@ -16,8 +16,7 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
     header('Location: block_slots.php');
     exit;
 }
-?>
-<?php
+
 require_once 'includes/header.php';
 // block_slots.php - Owner UI for blocking slots
 require_once 'includes/db_connect.php';
@@ -72,180 +71,94 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['block_date'], $_POST[
 }
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Block Time Slots</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/alertify.min.css"/>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/themes/default.min.css"/>
-    <style>
-        .flatpickr-calendar {
-            border-radius: 12px;
-            box-shadow: 0 6px 24px rgba(0,0,0,0.12);
-            background: #fff;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            color: #222;
-        }
-        .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, .flatpickr-day.inRange {
-            background: #0d6efd;
-            color: #fff;
-            border-radius: 6px;
-        }
-        .flatpickr-day.today {
-            border-color: #0d6efd;
-            background: #e3f0ff;
-            color: #0d6efd;
-        }
-        .flatpickr-day.disabled, .flatpickr-day.prevMonthDay, .flatpickr-day.nextMonthDay {
-            color: #bbb !important;
-            background: #f0f0f0;
-            cursor: not-allowed;
-        }
-        .flatpickr-months .flatpickr-month, .flatpickr-weekdays {
-            color: #222;
-        }
-        .flatpickr-current-month input.cur-year {
-            color: #0d6efd;
-        }
-        .flatpickr-time input {
-            border-radius: 8px;
-            border: 1px solid #dee2e6;
-            padding: 4px 8px;
-            background: #fff;
-            color: #222;
-        }
-        .form-label {
-            font-weight: 600;
-            color: #222;
-        }
-        .form-control {
-            color: #222;
-        }
-        .form-control:focus {
-            border-color: #0d6efd;
-            box-shadow: 0 0 0 0.2rem rgba(13,110,253,.15);
-            color: #222;
-        }
-        .container.mt-5 {
-            background: #fff;
-            border-radius: 16px;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.09);
-            padding: 2.5rem 2rem 2rem 2rem;
-            margin-top: 2.5rem !important;
-            color: #222;
-        }
-        h2, h4 {
-            color: #222;
-            font-weight: 700;
-        }
-        .btn-primary {
-            background: #0d6efd;
-            border: none;
-        }
-        .btn-primary:hover {
-            background: #2563eb;
-        }
-        .table {
-            background: #f9fafb;
-            border-radius: 10px;
-            overflow: hidden;
-            color: #222;
-        }
-        .table th {
-            background: #e3f0ff;
-            color: #222;
-            font-weight: 700;
-        }
-        .block-time-row {
-            display: flex;
-            gap: 1.5rem;
-            margin-bottom: 1rem;
-        }
-        .block-time-row .col-md-2 {
-            flex: 1;
-            min-width: 120px;
-        }
-        .block-time-row .form-label {
-            color: #222;
-            margin-bottom: 0.4rem;
-        }
-        .block-time-row .form-control {
-            background: #fff;
-            border-radius: 8px;
-            color: #222;
-        }
-    </style>
-</head>
-<body>
-<div class="container mt-5">
-    <h2>Block Time Slots For <?php echo htmlspecialchars($restaurant['name']); ?></h2>
-    <form method="post" class="row g-3 mb-4">
-        <div class="col-md-3 mb-2">
-            <label class="form-label">Date</label>
-            <input type="text" name="block_date" class="form-control" required>
-        </div>
-        <div class="block-time-row">
-            <div class="col-md-2">
-                <label class="form-label">Start Time</label>
-                <input type="text" name="block_time_start" class="form-control" required>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">End Time</label>
-                <input type="text" name="block_time_end" class="form-control" required>
+<!-- Link Flatpickr CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h2 class="mb-0">Block Time Slots For <?php echo htmlspecialchars($restaurant['name']); ?></h2>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="row g-3 mb-4">
+                        <div class="col-md-3 mb-2">
+                            <label class="form-label fw-semibold">Date</label>
+                            <input type="text" name="block_date" class="form-control" required>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold">Start Time</label>
+                                <input type="text" name="block_time_start" class="form-control" required>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold">End Time</label>
+                                <input type="text" name="block_time_end" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Reason</label>
+                            <input type="text" name="reason" class="form-control" maxlength="100" placeholder="e.g. Maintenance, Private Event">
+                        </div>
+                        <div class="col-md-2 align-self-end">
+                            <button type="submit" class="btn btn-primary w-100">Block Slot</button>
+                        </div>
+                    </form>
+                    
+                    <h4 class="mt-4 mb-3">Upcoming Blocked Slots</h4>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Start</th>
+                                <th>End</th>
+                                <th>Reason</th>
+                                <th>Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <?php 
+                            // Get all future blocks for this restaurant
+                            $stmt = $conn->prepare("SELECT * FROM blocked_slots WHERE restaurant_id = ? AND (block_date > CURDATE() OR (block_date = CURDATE() AND block_time_end >= CURTIME())) ORDER BY block_date, block_time_start");
+                            $stmt->bind_param("i", $restaurant_id);
+                            $stmt->execute();
+                            $blocks = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+                            $stmt->close();
+                            foreach ($blocks as $block): ?>
+                                <tr>
+                                    <td><?= htmlspecialchars($block['block_date']) ?></td>
+                                    <td><?= htmlspecialchars(substr($block['block_time_start'], 0, 5)) ?></td>
+                                    <td><?= htmlspecialchars(substr($block['block_time_end'], 0, 5)) ?></td>
+                                    <td><?= htmlspecialchars($block['reason']) ?></td>
+                                    <td>
+                                        <a href="?delete=<?= $block['block_id'] ?>" class="btn btn-danger btn-sm btn-delete-block">Delete</a>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                            <?php if (empty($blocks)): ?>
+                                <tr><td colspan="5" class="text-center">No upcoming blocks.</td></tr>
+                            <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <a href="reservations.php" class="btn btn-secondary">Back to Reservations</a>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <label class="form-label">Reason</label>
-            <input type="text" name="reason" class="form-control" maxlength="100" placeholder="e.g. Maintenance, Private Event">
-        </div>
-        <div class="col-md-2 align-self-end">
-            <button type="submit" class="btn btn-primary w-100">Block Slot</button>
-        </div>
-    </form>
-    <h4>Upcoming Blocked Slots</h4>
-    <table class="table table-bordered">
-        <thead>
-        <tr>
-            <th>Date</th>
-            <th>Start</th>
-            <th>End</th>
-            <th>Reason</th>
-            <th>Action</th>
-        </tr>
-        </thead>
-        <tbody>
-        <?php 
-        // Get all future blocks for this restaurant
-        $stmt = $conn->prepare("SELECT * FROM blocked_slots WHERE restaurant_id = ? AND (block_date > CURDATE() OR (block_date = CURDATE() AND block_time_end >= CURTIME())) ORDER BY block_date, block_time_start");
-        $stmt->bind_param("i", $restaurant_id);
-        $stmt->execute();
-        $blocks = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-        $stmt->close();
-        foreach ($blocks as $block): ?>
-            <tr>
-                <td><?= htmlspecialchars($block['block_date']) ?></td>
-                <td><?= htmlspecialchars(substr($block['block_time_start'], 0, 5)) ?></td>
-                <td><?= htmlspecialchars(substr($block['block_time_end'], 0, 5)) ?></td>
-                <td><?= htmlspecialchars($block['reason']) ?></td>
-                <td>
-                    <a href="?delete=<?= $block['block_id'] ?>" class="btn btn-danger btn-sm btn-delete-block">Delete</a>
-                </td>
-            </tr>
-        <?php endforeach; ?>
-        <?php if (empty($blocks)): ?>
-            <tr><td colspan="5" class="text-center">No upcoming blocks.</td></tr>
-        <?php endif; ?>
-        </tbody>
-    </table>
-    <a href="reservations.php" class="btn btn-secondary">Back to Reservations</a>
+    </div>
 </div>
-</body>
-</html>
+
+<!-- Add Flatpickr and AlertifyJS -->
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/alertify.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/alertify.min.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/themes/bootstrap.min.css"/>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const dateInput = document.querySelector('input[name="block_date"]');
@@ -345,4 +258,5 @@ document.addEventListener('DOMContentLoaded', function() {
     <?php endif; ?>
 });
 </script>
+
 <?php include 'includes/footer.php'; ?>

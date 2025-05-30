@@ -63,6 +63,7 @@ CREATE TABLE reviews (
     overall_rating DECIMAL(2,1),
     comment TEXT,
     images JSON,
+    is_read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL,
@@ -101,6 +102,7 @@ CREATE TABLE reservations (
     deposit_verification_date TIMESTAMP NULL,
     deposit_verified_by INT,
     deposit_rejection_reason TEXT,
+    is_read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL,
@@ -117,6 +119,7 @@ CREATE TABLE waitlist (
     preferred_time TIME,
     party_size INT,
     status ENUM('waiting', 'notified', 'expired') DEFAULT 'waiting',
+    is_read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
@@ -200,6 +203,8 @@ CREATE INDEX idx_reservation_date ON reservations(reservation_date, reservation_
 CREATE INDEX idx_promotion_code ON promotions(code);
 CREATE INDEX idx_contact_messages_read ON contact_messages(is_read);
 CREATE INDEX idx_reservation_deposit_status ON reservations(deposit_status);
+CREATE INDEX idx_review_read ON reviews(restaurant_id, is_read);
+CREATE INDEX idx_reservation_read ON reservations(restaurant_id, is_read);
 
 -- Insert sample users (12345678)
 INSERT INTO users (username, email, password, role, first_name, last_name, phone, points) VALUES

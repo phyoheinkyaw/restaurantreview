@@ -35,8 +35,8 @@ echo '<div class="admin-content-overlay" onclick="document.querySelector(\'.admi
             <a href="reservations.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'reservations.php' ? 'active' : ''; ?>">
                 <i class="fas fa-calendar-alt"></i>
                 <span>Reservations</span>
-                <?php if (isset($notification_count) && $notification_count > 0): ?>
-                <span class="badge bg-danger rounded-pill ms-auto"><?php echo $notification_count; ?></span>
+                <?php if (isset($unread_reservations) && $unread_reservations > 0): ?>
+                <span class="badge bg-danger rounded-pill ms-auto"><?php echo $unread_reservations; ?></span>
                 <?php endif; ?>
             </a>
             <a href="deposit_settings.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'deposit_settings.php' ? 'active' : ''; ?>">
@@ -46,6 +46,9 @@ echo '<div class="admin-content-overlay" onclick="document.querySelector(\'.admi
             <a href="reviews.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'reviews.php' ? 'active' : ''; ?>">
                 <i class="fas fa-star"></i>
                 <span>Customer Reviews</span>
+                <?php if (isset($unread_reviews) && $unread_reviews > 0): ?>
+                <span class="badge bg-danger rounded-pill ms-auto"><?php echo $unread_reviews; ?></span>
+                <?php endif; ?>
             </a>
             <a href="block_slots.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'block_slots.php' ? 'active' : ''; ?>">
                 <i class="fas fa-ban"></i>
@@ -63,10 +66,6 @@ echo '<div class="admin-content-overlay" onclick="document.querySelector(\'.admi
             <a href="profile.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'profile.php' ? 'active' : ''; ?>">
                 <i class="fas fa-user"></i>
                 <span>Profile</span>
-            </a>
-            <a href="settings.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'settings.php' ? 'active' : ''; ?>">
-                <i class="fas fa-cog"></i>
-                <span>Settings</span>
             </a>
         </div>
     </div>

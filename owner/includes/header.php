@@ -52,51 +52,56 @@ if ($has_restaurants && $current_restaurant_id == 0) {
     $_SESSION['current_restaurant_id'] = $current_restaurant_id;
 }
 
-// Get pending notifications (new reservations, new reviews)
-$notifications = [];
-$notification_count = 0;
-
+// Get restaurant IDs as a comma-separated string for SQL IN clause
+$restaurant_ids = '';
 if ($has_restaurants) {
-    // Get restaurant IDs as a comma-separated string for SQL IN clause
     $restaurant_ids = implode(',', array_map(function($r) { 
         return $r['restaurant_id']; 
     }, $owner_restaurants));
-    
-    // Get new reservations (in the last 24 hours)
-    $sql = "SELECT r.reservation_id, r.user_id, u.username, res.name as restaurant_name, 
-            r.reservation_date, r.reservation_time, r.created_at
-            FROM reservations r
-            JOIN users u ON r.user_id = u.user_id
-            JOIN restaurants res ON r.restaurant_id = res.restaurant_id
-            WHERE r.restaurant_id IN ($restaurant_ids)
-            AND r.created_at > NOW() - INTERVAL 24 HOUR
-            AND r.status = 'pending'
-            ORDER BY r.created_at DESC
-            LIMIT 5";
+}
+
+// Get unread notifications count
+$unread_count = 0;
+$unread_reviews = 0;
+$unread_reservations = 0;
+
+if ($has_restaurants) {
+    // Count unread reviews
+    $sql = "SELECT COUNT(*) as count FROM reviews 
+            WHERE restaurant_id IN ($restaurant_ids) 
+            AND is_read = 0";
     $result = $conn->query($sql);
-    if ($result && $result->num_rows > 0) {
-        while ($row = $result->fetch_assoc()) {
-            $notifications[] = [
-                'type' => 'reservation',
-                'id' => $row['reservation_id'],
-                'message' => "New reservation from {$row['username']} at {$row['restaurant_name']}",
-                'time' => $row['created_at'],
-                'link' => "reservations.php?id={$row['reservation_id']}"
-            ];
-            $notification_count++;
-        }
+    if ($result && $row = $result->fetch_assoc()) {
+        $unread_reviews = $row['count'];
+        $unread_count += $unread_reviews;
     }
     
-    // Get new reviews (in the last 24 hours)
+    // Count unread reservations
+    $sql = "SELECT COUNT(*) as count FROM reservations 
+            WHERE restaurant_id IN ($restaurant_ids) 
+            AND is_read = 0";
+    $result = $conn->query($sql);
+    if ($result && $row = $result->fetch_assoc()) {
+        $unread_reservations = $row['count'];
+        $unread_count += $unread_reservations;
+    }
+}
+
+// Get recent notifications for dropdown (limit to 5)
+$notifications = [];
+$notification_count = $unread_count; // Use total unread for badge count
+
+if ($has_restaurants) {
+    // Get recent unread reviews
     $sql = "SELECT r.review_id, r.user_id, u.username, res.name as restaurant_name, 
-            r.overall_rating, r.created_at
+            r.overall_rating, r.created_at, r.is_read, r.restaurant_id
             FROM reviews r
             JOIN users u ON r.user_id = u.user_id
             JOIN restaurants res ON r.restaurant_id = res.restaurant_id
             WHERE r.restaurant_id IN ($restaurant_ids)
-            AND r.created_at > NOW() - INTERVAL 24 HOUR
+            AND r.is_read = 0
             ORDER BY r.created_at DESC
-            LIMIT 5";
+            LIMIT 3";
     $result = $conn->query($sql);
     if ($result && $result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
@@ -105,9 +110,49 @@ if ($has_restaurants) {
                 'id' => $row['review_id'],
                 'message' => "New {$row['overall_rating']}-star review from {$row['username']} for {$row['restaurant_name']}",
                 'time' => $row['created_at'],
-                'link' => "reviews.php?id={$row['review_id']}"
+                'link' => "reviews.php?id={$row['review_id']}&restaurant_id={$row['restaurant_id']}",
+                'is_read' => $row['is_read'],
+                'restaurant_id' => $row['restaurant_id']
             ];
-            $notification_count++;
+        }
+    }
+    
+    // Get recent unread reservations
+    $sql = "SELECT r.reservation_id, r.user_id, u.username, res.name as restaurant_name, 
+            r.reservation_date, r.reservation_time, r.created_at, r.is_read,
+            r.deposit_status, r.deposit_amount, r.restaurant_id
+            FROM reservations r
+            JOIN users u ON r.user_id = u.user_id
+            JOIN restaurants res ON r.restaurant_id = res.restaurant_id
+            WHERE r.restaurant_id IN ($restaurant_ids)
+            AND r.is_read = 0
+            ORDER BY r.created_at DESC
+            LIMIT 3";
+    $result = $conn->query($sql);
+    if ($result && $result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            $notifications[] = [
+                'type' => 'reservation',
+                'id' => $row['reservation_id'],
+                'message' => "New reservation from {$row['username']} at {$row['restaurant_name']}",
+                'time' => $row['created_at'],
+                'link' => "reservation_details.php?id={$row['reservation_id']}&restaurant_id={$row['restaurant_id']}",
+                'is_read' => $row['is_read'],
+                'restaurant_id' => $row['restaurant_id']
+            ];
+            
+            // Add deposit notification if applicable
+            if ($row['deposit_status'] != 'not_required' && $row['deposit_amount'] > 0) {
+                $notifications[] = [
+                    'type' => 'deposit',
+                    'id' => $row['reservation_id'],
+                    'message' => "New deposit for reservation from {$row['username']} at {$row['restaurant_name']}",
+                    'time' => $row['created_at'],
+                    'link' => "reservation_details.php?id={$row['reservation_id']}&restaurant_id={$row['restaurant_id']}",
+                    'is_read' => $row['is_read'],
+                    'restaurant_id' => $row['restaurant_id']
+                ];
+            }
         }
     }
     
@@ -421,9 +466,6 @@ if ($has_restaurants) {
                             case 'reviews.php':
                                 echo 'Customer Reviews';
                                 break;
-                            case 'settings.php':
-                                echo 'Settings';
-                                break;
                             default:
                                 echo 'Owner Panel';
                         }
@@ -495,23 +537,32 @@ if ($has_restaurants) {
                                 <div class="dropdown-item">
                                     <p class="mb-0 text-muted">No new notifications</p>
                                 </div>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item text-center" href="notifications.php">View all notifications</a>
                             <?php else: ?>
                                 <?php foreach ($notifications as $notification): ?>
-                                    <a class="dropdown-item" href="<?php echo $notification['link']; ?>">
-                                        <div class="d-flex">
-                                            <div class="me-3">
-                                                <?php if ($notification['type'] == 'reservation'): ?>
-                                                    <i class="fas fa-calendar-alt text-primary"></i>
-                                                <?php elseif ($notification['type'] == 'review'): ?>
-                                                    <i class="fas fa-star text-warning"></i>
-                                                <?php endif; ?>
-                                            </div>
-                                            <div>
-                                                <p class="mb-0 fw-semibold"><?php echo htmlspecialchars($notification['message']); ?></p>
-                                                <small class="text-muted"><?php echo timeAgo($notification['time']); ?></small>
-                                            </div>
-                                        </div>
-                                    </a>
+                                    <div class="dropdown-item p-0">
+                                        <form method="POST" action="notification_redirect.php">
+                                            <input type="hidden" name="type" value="<?php echo $notification['type']; ?>">
+                                            <input type="hidden" name="id" value="<?php echo $notification['id']; ?>">
+                                            <input type="hidden" name="restaurant_id" value="<?php echo $notification['restaurant_id']; ?>">
+                                            <button type="submit" class="btn btn-link text-decoration-none text-start w-100 px-3 py-2">
+                                                <div class="d-flex">
+                                                    <div class="me-3">
+                                                        <?php if ($notification['type'] == 'reservation'): ?>
+                                                            <i class="fas fa-calendar-alt text-primary"></i>
+                                                        <?php elseif ($notification['type'] == 'review'): ?>
+                                                            <i class="fas fa-star text-warning"></i>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                    <div>
+                                                        <p class="mb-0 fw-semibold"><?php echo htmlspecialchars($notification['message']); ?></p>
+                                                        <small class="text-muted"><?php echo timeAgo($notification['time']); ?></small>
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        </form>
+                                    </div>
                                 <?php endforeach; ?>
                                 <div class="dropdown-divider"></div>
                                 <a class="dropdown-item text-center" href="notifications.php">View all notifications</a>
@@ -545,8 +596,6 @@ if ($has_restaurants) {
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="profile.php"><i class="fas fa-user me-2"></i> Profile</a></li>
-                            <li><a class="dropdown-item" href="settings.php"><i class="fas fa-cog me-2"></i> Settings</a></li>
-                            <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="../logout.php"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
                         </ul>
                     </div>

@@ -145,17 +145,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
 <div class="container-fluid">
     <div class="row">
         <div class="col-lg-12">
-            <?php if ($error): ?>
+            <?php if (isset($_SESSION['error'])): ?>
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <strong>Error:</strong> <?php echo $error; ?>
+                    <strong>Error:</strong> <?php echo $_SESSION['error']; ?>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
+                <?php unset($_SESSION['error']); ?>
             <?php endif; ?>
-            <?php if ($success): ?>
+            <?php if (isset($_SESSION['success'])): ?>
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <?php echo $success; ?>
+                    <?php echo $_SESSION['success']; ?>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
+                <?php unset($_SESSION['success']); ?>
             <?php endif; ?>
         </div>
     </div>
@@ -189,9 +191,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
                                     </div>
                                 </div>
                                 <div class="mb-3">
+                                    <label class="form-label">Username</label>
+                                    <input type="text" name="username" class="form-control" value="<?php echo htmlspecialchars($owner['username']); ?>" disabled>
+                                    <small class="text-muted">Username cannot be changed</small>
+                                </div>
+                                <div class="mb-3">
                                     <label class="form-label">Email</label>
                                     <input type="email" name="emailshow" class="form-control" value="<?php echo htmlspecialchars($owner['email']); ?>" disabled>
                                     <input type="hidden" name="email" value="<?php echo htmlspecialchars($owner['email']); ?>">
+                                    <small class="text-muted">Email cannot be changed. Need to update? <a href="#" data-bs-toggle="modal" data-bs-target="#contactAdminModal">Contact admin</a></small>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Phone</label>
@@ -341,4 +349,51 @@ if (newPassword && confirmPassword) {
     confirmPassword.addEventListener('input', checkPasswordRequirements);
 }
 </script>
+<!-- Contact Admin Modal -->
+<div class="modal fade" id="contactAdminModal" tabindex="-1" aria-labelledby="contactAdminModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="contactAdminModalLabel">Contact Admin to Change Email</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="send_contact.php">
+                <div class="modal-body">
+                    <p>Please fill out this form to request an email change. The admin team will review your request.</p>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="contact_name" class="form-label">Your Name</label>
+                            <input type="text" class="form-control" id="contact_name" name="name" value="<?php echo htmlspecialchars($owner['first_name'] . ' ' . $owner['last_name']); ?>" required>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="contact_email" class="form-label">Current Email</label>
+                            <input type="email" class="form-control" id="contact_email" name="email" value="<?php echo htmlspecialchars($owner['email']); ?>" required>
+                        </div>
+                    </div>
+                    
+                    <input type="hidden" name="subject" value="Email Change Request">
+                    
+                    <div class="mb-3">
+                        <label for="contact_message" class="form-label">Message</label>
+                        <textarea class="form-control" id="contact_message" name="message" rows="8" required>Hello Admin,
+
+I would like to change my email address.
+
+Current email: <?php echo htmlspecialchars($owner['email']); ?>
+
+New email: 
+
+Thank you.</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Send Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 <?php require_once 'includes/footer.php'; ?>

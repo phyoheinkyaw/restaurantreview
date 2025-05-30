@@ -307,10 +307,13 @@ $stmt->close();
                                             </td>
                                             <td>
                                                 <div class="btn-group">
-                                                    <a href="edit_restaurant.php?id=<?php echo $restaurant['restaurant_id']; ?>" 
-                                                       class="btn btn-sm btn-primary me-2">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
+                                                    <form method="POST" action="change_restaurant.php" class="d-inline">
+                                                        <input type="hidden" name="restaurant_id" value="<?php echo $restaurant['restaurant_id']; ?>">
+                                                        <input type="hidden" name="redirect" value="manage_restaurant.php">
+                                                        <button type="submit" class="btn btn-sm btn-primary me-2">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                    </form>
                                                     <form method="GET" class="d-inline delete-form">
                                                         <input type="hidden" name="delete" value="1">
                                                         <input type="hidden" name="restaurant_id" value="<?php echo $restaurant['restaurant_id']; ?>">

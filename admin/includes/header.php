@@ -149,9 +149,6 @@ if (!$admin) {
                             case 'reservations.php':
                                 echo 'Reservations';
                                 break;
-                            case 'settings.php':
-                                echo 'Settings';
-                                break;
                             default:
                                 echo 'Admin Panel';
                         }

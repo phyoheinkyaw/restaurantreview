@@ -224,14 +224,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <i class="fas fa-eye"></i>
                                     </button>
                                 </div>
-                                <div class="form-text">
-                                    Password must be at least 8 characters long and contain:
-                                    <ul class="mb-0">
-                                        <li>At least one uppercase letter</li>
-                                        <li>At least one lowercase letter</li>
-                                        <li>At least one number</li>
-                                        <li>At least one special character</li>
-                                    </ul>
+                                <div id="passwordRequirements" class="mt-2">
+                                    <div class="password-strength-meter mb-2">
+                                        <div class="progress">
+                                            <div id="passwordStrength" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <small id="passwordStrengthText" class="form-text">Password strength: Too weak</small>
+                                    </div>
+                                    <div><small class="req" id="length-check"><i class="fas fa-times-circle text-danger"></i> At least 8 characters</small></div>
+                                    <div><small class="req" id="uppercase-check"><i class="fas fa-times-circle text-danger"></i> At least one uppercase letter</small></div>
+                                    <div><small class="req" id="lowercase-check"><i class="fas fa-times-circle text-danger"></i> At least one lowercase letter</small></div>
+                                    <div><small class="req" id="number-check"><i class="fas fa-times-circle text-danger"></i> At least one number</small></div>
+                                    <div><small class="req" id="special-check"><i class="fas fa-times-circle text-danger"></i> At least one special character</small></div>
                                 </div>
                                 <div class="invalid-feedback">
                                     Please enter a valid password.
@@ -303,9 +307,97 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         togglePasswordVisibility('togglePassword', 'password');
         togglePasswordVisibility('toggleConfirmPassword', 'confirm_password');
 
+        // Real-time password validation
+        const passwordInput = document.getElementById('password');
+        const confirmInput = document.getElementById('confirm_password');
+        const lengthCheck = document.getElementById('length-check');
+        const uppercaseCheck = document.getElementById('uppercase-check');
+        const lowercaseCheck = document.getElementById('lowercase-check');
+        const numberCheck = document.getElementById('number-check');
+        const specialCheck = document.getElementById('special-check');
+        const passwordStrength = document.getElementById('passwordStrength');
+        const passwordStrengthText = document.getElementById('passwordStrengthText');
+        
+        function updatePasswordStrength() {
+            const value = passwordInput.value;
+            let score = 0;
+            
+            // Check length
+            if (value.length >= 8) {
+                lengthCheck.innerHTML = '<i class="fas fa-check-circle text-success"></i> At least 8 characters';
+                score += 20;
+            } else {
+                lengthCheck.innerHTML = '<i class="fas fa-times-circle text-danger"></i> At least 8 characters';
+            }
+            
+            // Check uppercase
+            if (/[A-Z]/.test(value)) {
+                uppercaseCheck.innerHTML = '<i class="fas fa-check-circle text-success"></i> At least one uppercase letter';
+                score += 20;
+            } else {
+                uppercaseCheck.innerHTML = '<i class="fas fa-times-circle text-danger"></i> At least one uppercase letter';
+            }
+            
+            // Check lowercase
+            if (/[a-z]/.test(value)) {
+                lowercaseCheck.innerHTML = '<i class="fas fa-check-circle text-success"></i> At least one lowercase letter';
+                score += 20;
+            } else {
+                lowercaseCheck.innerHTML = '<i class="fas fa-times-circle text-danger"></i> At least one lowercase letter';
+            }
+            
+            // Check number
+            if (/[0-9]/.test(value)) {
+                numberCheck.innerHTML = '<i class="fas fa-check-circle text-success"></i> At least one number';
+                score += 20;
+            } else {
+                numberCheck.innerHTML = '<i class="fas fa-times-circle text-danger"></i> At least one number';
+            }
+            
+            // Check special character
+            if (/[^A-Za-z0-9]/.test(value)) {
+                specialCheck.innerHTML = '<i class="fas fa-check-circle text-success"></i> At least one special character';
+                score += 20;
+            } else {
+                specialCheck.innerHTML = '<i class="fas fa-times-circle text-danger"></i> At least one special character';
+            }
+            
+            // Update strength meter
+            passwordStrength.style.width = score + '%';
+            
+            // Update color based on score
+            if (score < 40) {
+                passwordStrength.className = 'progress-bar bg-danger';
+                passwordStrengthText.textContent = 'Password strength: Weak';
+            } else if (score < 80) {
+                passwordStrength.className = 'progress-bar bg-warning';
+                passwordStrengthText.textContent = 'Password strength: Medium';
+            } else {
+                passwordStrength.className = 'progress-bar bg-success';
+                passwordStrengthText.textContent = 'Password strength: Strong';
+            }
+            
+            // Enable/disable submit based on all requirements
+            const isValid = score === 100;
+            passwordInput.setCustomValidity(isValid ? '' : 'Password must meet all requirements');
+        }
+        
+        passwordInput.addEventListener('input', function() {
+            updatePasswordStrength();
+            
+            // Also check if passwords match
+            if (confirmInput.value) {
+                if (this.value !== confirmInput.value) {
+                    confirmInput.setCustomValidity('Passwords do not match');
+                } else {
+                    confirmInput.setCustomValidity('');
+                }
+            }
+        });
+
         // Password match validation
-        document.getElementById('confirm_password').addEventListener('input', function() {
-            const password = document.getElementById('password').value;
+        confirmInput.addEventListener('input', function() {
+            const password = passwordInput.value;
             const confirmPassword = this.value;
             
             if (password !== confirmPassword) {
@@ -314,6 +406,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 this.setCustomValidity('');
             }
         });
+
+        // Initial check
+        updatePasswordStrength();
     </script>
 </body>
 </html> 

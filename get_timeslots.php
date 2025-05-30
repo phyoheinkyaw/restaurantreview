@@ -60,6 +60,15 @@ try {
     $stmt->execute([$restaurant_id, $date]);
     $existing_reservations = $stmt->fetchAll();
     
+    // Get blocked slots for this date
+    $stmt = $db->prepare("
+        SELECT block_time_start, block_time_end, reason 
+        FROM blocked_slots 
+        WHERE restaurant_id = ? AND block_date = ?
+    ");
+    $stmt->execute([$restaurant_id, $date]);
+    $blocked_slots = $stmt->fetchAll();
+    
     // Generate time slots (every 30 minutes)
     $start = strtotime($open_time);
     $end = strtotime($close_time);
@@ -71,35 +80,44 @@ try {
     
     $interval = 30 * 60; // 30 minutes in seconds
     
-    $slots = [];
-    for ($time = $start; $time <= $end - $interval; $time += $interval) {
-        $slots[] = date('H:i', $time);
-    }
+    // Create result array with both available and blocked slots
+    $result = [];
     
-    // Filter out occupied time slots
-    $available_slots = array_filter($slots, function($slot) use ($existing_reservations) {
+    for ($time = $start; $time <= $end - $interval; $time += $interval) {
+        $timeStr = date('H:i', $time);
+        $slot = ['time' => $timeStr, 'available' => true, 'reason' => null];
+        
+        // Check if this time slot is occupied by a reservation
         foreach ($existing_reservations as $reservation) {
             $reservation_time = substr($reservation['reservation_time'], 0, 5); // Extract HH:MM from time
-            if ($reservation_time === $slot) {
-                // This slot is already booked
-                return false;
+            if ($reservation_time === $timeStr) {
+                $slot['available'] = false;
+                $slot['reason'] = 'Already booked';
+                break;
             }
         }
-        return true;
-    });
-    
-    // Filter out time slots that are in the past for today
-    if ($date === date('Y-m-d')) {
-        $current_time = date('H:i');
-        $available_slots = array_filter($available_slots, function($slot) use ($current_time) {
-            return $slot > $current_time;
-        });
+        
+        // Check if this time slot falls within a blocked period
+        foreach ($blocked_slots as $blockedSlot) {
+            $start_time = substr($blockedSlot['block_time_start'], 0, 5); // Extract HH:MM from time
+            $end_time = substr($blockedSlot['block_time_end'], 0, 5); // Extract HH:MM from time
+            if ($timeStr >= $start_time && $timeStr < $end_time) {
+                $slot['available'] = false;
+                $slot['reason'] = $blockedSlot['reason'] ? $blockedSlot['reason'] : 'Unavailable';
+                break;
+            }
+        }
+        
+        // Filter out time slots that are in the past for today
+        if ($date === date('Y-m-d') && $timeStr <= date('H:i')) {
+            $slot['available'] = false;
+            $slot['reason'] = 'Past time';
+        }
+        
+        $result[] = $slot;
     }
     
-    // Re-index array
-    $available_slots = array_values($available_slots);
-    
-    echo json_encode($available_slots);
+    echo json_encode($result);
     
 } catch (PDOException $e) {
     error_log("Database error in get_timeslots.php: " . $e->getMessage());
