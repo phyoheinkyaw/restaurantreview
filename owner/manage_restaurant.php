@@ -174,6 +174,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $website = $_POST['website'];
         $description = $_POST['description'];
         $status = isset($_POST['is_active']) ? 1 : 0;
+        $price_range = $_POST['price_range'];
+        
+        // Features
+        $has_parking = isset($_POST['has_parking']) ? 1 : 0;
+        $is_wheelchair_accessible = isset($_POST['is_wheelchair_accessible']) ? 1 : 0;
+        $has_wifi = isset($_POST['has_wifi']) ? 1 : 0;
         
         // Handle image upload
         $image = $restaurant['image']; // Keep existing image by default
@@ -224,11 +230,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 website = ?, 
                 description = ?,
                 image = ?, 
-                is_active = ? 
+                is_active = ?,
+                price_range = ?,
+                has_parking = ?,
+                is_wheelchair_accessible = ?,
+                has_wifi = ?
                 WHERE restaurant_id = ?";
         
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sssddsssssii", $name, $cuisine_type, $address, $latitude, $longitude, $phone, $email, $website, $description, $image, $status, $restaurant_id);
+        $stmt->bind_param("sssddsssssisiiii", $name, $cuisine_type, $address, $latitude, $longitude, $phone, $email, $website, $description, $image, $status, $price_range, $has_parking, $is_wheelchair_accessible, $has_wifi, $restaurant_id);
         $stmt->execute();
         $stmt->close();
         
@@ -361,6 +371,34 @@ $opening_hours = json_decode($restaurant['opening_hours'], true);
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Description</label>
                                 <textarea class="form-control" name="description" rows="3"><?php echo htmlspecialchars($restaurant['description'] ?? ''); ?></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Price Range</label>
+                                <select class="form-select" name="price_range" required>
+                                    <option value="$" <?php echo ($restaurant['price_range'] === '$') ? 'selected' : ''; ?>>$ (Inexpensive)</option>
+                                    <option value="$$" <?php echo ($restaurant['price_range'] === '$$') ? 'selected' : ''; ?>>$$ (Moderate)</option>
+                                    <option value="$$$" <?php echo ($restaurant['price_range'] === '$$$') ? 'selected' : ''; ?>>$$$ (Expensive)</option>
+                                    <option value="$$$$" <?php echo ($restaurant['price_range'] === '$$$$') ? 'selected' : ''; ?>>$$$$ (Very Expensive)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Features</label>
+                                <div class="form-check mb-2">
+                                    <input type="checkbox" class="form-check-input" id="has_parking" name="has_parking" <?php echo ($restaurant['has_parking'] == 1) ? 'checked' : ''; ?>>
+                                    <label class="form-check-label" for="has_parking">Has Parking</label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input type="checkbox" class="form-check-input" id="is_wheelchair_accessible" name="is_wheelchair_accessible" <?php echo ($restaurant['is_wheelchair_accessible'] == 1) ? 'checked' : ''; ?>>
+                                    <label class="form-check-label" for="is_wheelchair_accessible">Wheelchair Accessible</label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input type="checkbox" class="form-check-input" id="has_wifi" name="has_wifi" <?php echo ($restaurant['has_wifi'] == 1) ? 'checked' : ''; ?>>
+                                    <label class="form-check-label" for="has_wifi">Free WiFi</label>
+                                </div>
                             </div>
                         </div>
                         

@@ -2,6 +2,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load featured restaurants
     loadFeaturedRestaurants();
     
+    // Load popular cuisines
+    loadPopularCuisines();
+    
     // Ensure hero image is loaded
     const heroImage = document.querySelector('.hero-section img');
     if (heroImage) {
@@ -33,6 +36,76 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+// Load popular cuisines based on reservation data
+function loadPopularCuisines() {
+    const cuisinesContainer = document.getElementById('popularCuisines');
+    if (!cuisinesContainer) return;
+    
+    fetch('get_popular_cuisines.php')
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                console.error('Error:', data.message);
+                // Fall back to default cuisines
+                setDefaultCuisines(cuisinesContainer);
+                return;
+            }
+            
+            // Clear loading indicator
+            cuisinesContainer.innerHTML = '';
+            
+            // If no cuisines returned, use defaults
+            if (data.cuisines.length === 0) {
+                setDefaultCuisines(cuisinesContainer);
+                return;
+            }
+            
+            // Add the popular cuisines
+            data.cuisines.forEach(cuisine => {
+                const cuisineLink = document.createElement('a');
+                cuisineLink.href = `search.php?cuisine=${encodeURIComponent(cuisine.cuisine_type)}`;
+                cuisineLink.className = 'badge rounded-pill bg-light text-dark me-2 mb-2 px-3 py-2';
+                
+                // If it has reservations, show a small indicator
+                if (cuisine.reservation_count > 0) {
+                    cuisineLink.innerHTML = `${cuisine.cuisine_type}`;
+                } else {
+                    cuisineLink.textContent = cuisine.cuisine_type;
+                }
+                
+                cuisinesContainer.appendChild(cuisineLink);
+            });
+            
+            // Add "Newly Added" and "Outdoor Seating" options at the end
+            // const additionalFilters = [
+            //     { href: 'search.php?feature=outdoor', text: 'Outdoor Seating' },
+            //     { href: 'search.php?sort=newest', text: 'Newly Added' }
+            // ];
+            
+            // additionalFilters.forEach(filter => {
+            //     const filterLink = document.createElement('a');
+            //     filterLink.href = filter.href;
+            //     filterLink.className = 'badge rounded-pill bg-light text-dark me-2 mb-2 px-3 py-2';
+            //     filterLink.textContent = filter.text;
+            //     cuisinesContainer.appendChild(filterLink);
+            // });
+        })
+        .catch(error => {
+            console.error('Error fetching popular cuisines:', error);
+            setDefaultCuisines(cuisinesContainer);
+        });
+}
+
+// Set default cuisines when API fails
+function setDefaultCuisines(container) {
+    container.innerHTML = `
+        <a href="search.php?cuisine=italian" class="badge rounded-pill bg-light text-dark me-2 mb-2 px-3 py-2">Italian</a>
+        <a href="search.php?cuisine=japanese" class="badge rounded-pill bg-light text-dark me-2 mb-2 px-3 py-2">Japanese</a>
+        <a href="search.php?cuisine=mexican" class="badge rounded-pill bg-light text-dark me-2 mb-2 px-3 py-2">Mexican</a>
+        <a href="search.php?cuisine=indian" class="badge rounded-pill bg-light text-dark me-2 mb-2 px-3 py-2">Indian</a>
+    `;
+}
 
 // Load featured restaurants
 function loadFeaturedRestaurants() {

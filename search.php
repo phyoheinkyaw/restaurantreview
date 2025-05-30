@@ -5,24 +5,70 @@ require_once 'includes/functions.php';
 
 // Get search parameters
 $search = isset($_GET['search']) ? sanitize($_GET['search']) : '';
+// Also check for 'q' parameter for backward compatibility
+if (empty($search) && isset($_GET['q'])) {
+    $search = sanitize($_GET['q']);
+}
+
+// Debug search parameter
+error_log("Search parameter: " . $search);
+
 $cuisine = isset($_GET['cuisine']) ? sanitize($_GET['cuisine']) : '';
 $price_range = isset($_GET['price_range']) ? sanitize($_GET['price_range']) : '';
 $rating = isset($_GET['rating']) ? (float)$_GET['rating'] : 0;
 $sort = isset($_GET['sort']) ? sanitize($_GET['sort']) : 'rating';
+$feature = isset($_GET['feature']) ? sanitize($_GET['feature']) : '';
+
+// Get location parameters if provided
+$userLat = isset($_GET['lat']) ? (float)$_GET['lat'] : null;
+$userLng = isset($_GET['lng']) ? (float)$_GET['lng'] : null;
+$isLocationSearch = ($userLat !== null && $userLng !== null);
+
+// Automatically set sort to distance when location search is active
+if ($isLocationSearch && !isset($_GET['sort'])) {
+    $sort = 'distance';
+}
 
 // Build the query
 $query = "SELECT r.*, 
             COALESCE(AVG(rev.overall_rating), 0) as avg_rating,
-            COUNT(rev.review_id) as review_count
-          FROM restaurants r
+            COUNT(rev.review_id) as review_count";
+
+// Add distance calculation if location search is active
+if ($isLocationSearch) {
+    $query .= ", (
+                6371 * acos(
+                    cos(radians(:user_lat)) * 
+                    cos(radians(r.latitude)) * 
+                    cos(radians(r.longitude) - radians(:user_lng)) + 
+                    sin(radians(:user_lat)) * 
+                    sin(radians(r.latitude))
+                )
+            ) AS distance";
+}
+
+$query .= " FROM restaurants r
           LEFT JOIN reviews rev ON r.restaurant_id = rev.restaurant_id
           WHERE 1=1";
 
 $params = [];
 
+if ($isLocationSearch) {
+    $params[':user_lat'] = $userLat;
+    $params[':user_lng'] = $userLng;
+}
+
 if (!empty($search)) {
-    $query .= " AND (r.name LIKE :search OR r.description LIKE :search OR r.cuisine_type LIKE :search)";
+    // Simplify search to make it more forgiving
+    $query .= " AND (r.name LIKE :search 
+                OR r.description LIKE :search 
+                OR r.cuisine_type LIKE :search 
+                OR r.address LIKE :search)";
     $params[':search'] = "%$search%";
+    
+    // Log the search query and parameter
+    error_log("Search query condition: " . $query);
+    error_log("Search parameter value: " . $params[':search']);
 }
 
 if (!empty($cuisine)) {
@@ -35,24 +81,36 @@ if (!empty($price_range)) {
     $params[':price_range'] = $price_range;
 }
 
+// Handle specific features
+if ($feature === 'outdoor') {
+    $query .= " AND r.has_outdoor_seating = 1";
+}
+
+$query .= " GROUP BY r.restaurant_id";
+
 if ($rating > 0) {
     $query .= " HAVING avg_rating >= :rating";
     $params[':rating'] = $rating;
 }
 
-$query .= " GROUP BY r.restaurant_id";
-
 // Add sorting
-switch ($sort) {
-    case 'price_low':
-        $query .= " ORDER BY r.price_range ASC, avg_rating DESC";
-        break;
-    case 'price_high':
-        $query .= " ORDER BY r.price_range DESC, avg_rating DESC";
-        break;
-    case 'rating':
-    default:
-        $query .= " ORDER BY avg_rating DESC, review_count DESC";
+if ($isLocationSearch && $sort === 'distance') {
+    $query .= " ORDER BY distance ASC";
+} else {
+    switch ($sort) {
+        case 'price_low':
+            $query .= " ORDER BY r.price_range ASC, avg_rating DESC";
+            break;
+        case 'price_high':
+            $query .= " ORDER BY r.price_range DESC, avg_rating DESC";
+            break;
+        case 'newest':
+            $query .= " ORDER BY r.created_at DESC";
+            break;
+        case 'rating':
+        default:
+            $query .= " ORDER BY avg_rating DESC, review_count DESC";
+    }
 }
 
 try {
@@ -84,13 +142,14 @@ try {
     
 <style>
         #map {
-            height: 80vh;
+            height: 96vh;
             width: 95%;
             position: sticky;
             bottom: 0;
-            border-radius: 0;
+            border-radius: 12px;
             margin: 0 auto;
             display: block;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
         .map-container {
             display: flex;
@@ -102,27 +161,169 @@ try {
         .restaurant-card {
             cursor: pointer;
             transition: all 0.3s ease;
+            margin-bottom: 1.5rem;
         }
         .restaurant-card:hover {
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
         }
         .restaurant-card.active {
-            border: 2px solid var(--primary);
+            border-left: 4px solid var(--primary);
         }
         .content-wrapper {
             height: 100vh;
             overflow-y: auto;
             padding: 1rem;
+            scrollbar-width: thin;
+            max-height: 100vh;
+        }
+        .content-wrapper::-webkit-scrollbar {
+            width: 8px;
+        }
+        .content-wrapper::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .content-wrapper::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+        .content-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
         }
         .filter-form {
             display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            align-items: flex-end;
+            flex-direction: column;
+            gap: 0.5rem;
         }
-        .filter-form .form-group {
-            flex: 1;
-            min-width: 200px;
+        
+        /* Enhanced form elements */
+        .form-control, .form-select {
+            border-radius: 8px;
+            padding: 10px 15px;
+            border-color: #e0e0e0;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+        }
+        
+        #nearMeBtn {
+            border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+        
+        .btn-group .btn:first-child {
+            border-top-left-radius: 8px;
+            border-bottom-left-radius: 8px;
+        }
+        
+        .btn-group .btn:last-child {
+            border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+        
+        #priceRangeButtons .btn, [data-rating].btn {
+            font-weight: 600;
+            padding: 10px 0;
+        }
+        
+        /* Star rating buttons */
+        [data-rating].btn {
+            color: #664d03;
+        }
+        
+        [data-rating].btn-outline-warning {
+            color: #664d03;
+        }
+        
+        [data-rating].btn-warning {
+            background-color: #ffc107;
+            border-color: #ffc107;
+            color: #664d03;
+        }
+        
+        /* Search card styling */
+        .card {
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            overflow: hidden;
+            border: none;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        .card-title {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: #333;
+        }
+        
+        .results-heading {
+            position: relative;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            color: #333;
+        }
+        
+        .results-heading::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 80px;
+            height: 3px;
+            background-color: var(--primary);
+            border-radius: 3px;
+        }
+        
+        /* Distance badge */
+        .distance-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            background-color: rgba(0,0,0,0.7);
+            color: white;
+            backdrop-filter: blur(4px);
+        }
+        
+        /* Enhanced map pins */
+        /* We are now using standard Leaflet markers with custom colors */
+        
+        /* Enhanced map popup styles */
+        .restaurant-popup .leaflet-popup-content-wrapper {
+            padding: 0;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        
+        .restaurant-popup .leaflet-popup-content {
+            margin: 0;
+            min-width: 300px;
+            overflow: hidden;
+        }
+        
+        .restaurant-popup .leaflet-popup-tip {
+            background: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        
+        /* Ensure popup is properly positioned */
+        .leaflet-popup {
+            margin-bottom: 5px !important;
+        }
+        
+        .restaurant-popup .leaflet-popup-tip-container {
+            height: 10px !important;
         }
         
         /* Map popup styles from homepage */
@@ -208,75 +409,6 @@ try {
         .marker-info.phone i {
             background-color: rgba(0, 123, 255, 0.15);
             color: var(--primary-color);
-        }
-        
-        .restaurant-marker {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            border: 2px solid #fff;
-            font-size: 16px;
-            transition: transform 0.2s ease;
-            position: relative;
-        }
-        
-        .restaurant-marker:hover {
-            transform: scale(1.2);
-            z-index: 1000 !important;
-        }
-        
-        .restaurant-marker.bg-success {
-            background-color: var(--success-color) !important;
-        }
-        
-        .restaurant-marker.bg-primary {
-            background-color: var(--primary-color) !important;
-        }
-        
-        .restaurant-marker.bg-warning {
-            background-color: var(--warning-color) !important;
-            color: #664d03 !important;
-        }
-        
-        .restaurant-marker.bg-danger {
-            background-color: var(--danger-color) !important;
-        }
-        
-        .restaurant-marker.pulse {
-            animation: pulse 1.5s infinite;
-        }
-        
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7);
-            }
-            70% {
-                transform: scale(1.1);
-                box-shadow: 0 0 0 10px rgba(0, 123, 255, 0);
-            }
-            100% {
-                transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
-            }
-        }
-        
-        .restaurant-popup .leaflet-popup-content-wrapper {
-            padding: 0;
-            overflow: hidden;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-        }
-        
-        .restaurant-popup .leaflet-popup-content {
-            margin: 0;
-            min-width: 300px;
-            overflow: hidden;
         }
         
         .restaurant-popup .leaflet-popup-close-button {
@@ -382,60 +514,78 @@ try {
                         <div class="card-body">
                             <h5 class="card-title mb-4">Search Filters</h5>
                             <form method="GET" action="" id="searchForm" class="filter-form">
-                                <div class="form-group">
-                                    <label class="form-label">Search</label>
-                                    <input type="text" class="form-control" name="search" 
-                                           value="<?php echo htmlspecialchars($search); ?>" 
-                                           placeholder="Search restaurants...">
+                                <div class="form-group mb-3">
+                                    <label class="form-label fw-bold mb-2">Search</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="searchInput" name="search" 
+                                               value="<?php echo htmlspecialchars($search); ?>" 
+                                               placeholder="Search restaurants or cuisines...">
+                                        <button type="button" id="nearMeBtn" class="btn btn-primary" title="Find restaurants near me">
+                                            <i class="fas fa-location-arrow"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text small text-muted mt-1">Type to search, results update automatically</div>
                                 </div>
                                 
-                                <div class="form-group">
-                                    <label class="form-label">Cuisine Type</label>
-                                    <select class="form-select" name="cuisine">
-                                        <option value="">All Cuisines</option>
-                                        <?php foreach ($cuisine_types as $type): ?>
-                                            <option value="<?php echo htmlspecialchars($type); ?>"
-                                                    <?php echo $cuisine === $type ? 'selected' : ''; ?>>
-                                                <?php echo htmlspecialchars($type); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold mb-2">Cuisine Type</label>
+                                        <select class="form-select filter-select shadow-sm" name="cuisine" id="cuisineSelect">
+                                            <option value="">All Cuisines</option>
+                                            <?php foreach ($cuisine_types as $type): ?>
+                                                <option value="<?php echo htmlspecialchars($type); ?>"
+                                                        <?php echo $cuisine === $type ? 'selected' : ''; ?>>
+                                                    <?php echo htmlspecialchars($type); ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold mb-2">Sort By</label>
+                                        <select class="form-select filter-select shadow-sm" id="sortSelect" name="sort">
+                                            <option value="rating" <?php echo $sort === 'rating' ? 'selected' : ''; ?>>Best Rated</option>
+                                            <?php if ($isLocationSearch): ?>
+                                            <option value="distance" <?php echo $sort === 'distance' ? 'selected' : ''; ?>>Nearest First</option>
+                                            <?php endif; ?>
+                                            <option value="price_low" <?php echo $sort === 'price_low' ? 'selected' : ''; ?>>Price: Low to High</option>
+                                            <option value="price_high" <?php echo $sort === 'price_high' ? 'selected' : ''; ?>>Price: High to Low</option>
+                                            <option value="newest" <?php echo $sort === 'newest' ? 'selected' : ''; ?>>Newest Added</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 
-                                <div class="form-group">
-                                    <label class="form-label">Price Range</label>
-                                    <select class="form-select" name="price_range">
-                                        <option value="">Any Price</option>
-                                        <option value="$" <?php echo $price_range === '$' ? 'selected' : ''; ?>>$</option>
-                                        <option value="$$" <?php echo $price_range === '$$' ? 'selected' : ''; ?>>$$</option>
-                                        <option value="$$$" <?php echo $price_range === '$$$' ? 'selected' : ''; ?>>$$$</option>
-                                        <option value="$$$$" <?php echo $price_range === '$$$$' ? 'selected' : ''; ?>>$$$$</option>
-                                    </select>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold mb-2">Price Range</label>
+                                    <div class="btn-group w-100 shadow-sm" role="group" id="priceRangeButtons">
+                                        <input type="hidden" name="price_range" id="priceRangeInput" value="<?php echo htmlspecialchars($price_range); ?>">
+                                        <button type="button" class="btn <?php echo $price_range === '$' ? 'btn-success' : 'btn-outline-success'; ?>" data-price="$">$</button>
+                                        <button type="button" class="btn <?php echo $price_range === '$$' ? 'btn-success' : 'btn-outline-success'; ?>" data-price="$$">$$</button>
+                                        <button type="button" class="btn <?php echo $price_range === '$$$' ? 'btn-success' : 'btn-outline-success'; ?>" data-price="$$$">$$$</button>
+                                        <button type="button" class="btn <?php echo $price_range === '$$$$' ? 'btn-success' : 'btn-outline-success'; ?>" data-price="$$$$">$$$$</button>
+                                        <button type="button" class="btn <?php echo empty($price_range) ? 'btn-success' : 'btn-outline-success'; ?>" data-price="">Any</button>
+                                    </div>
                                 </div>
                                 
-                                <div class="form-group">
-                                    <label class="form-label">Minimum Rating</label>
-                                    <select class="form-select" name="rating">
-                                        <option value="0">Any Rating</option>
-                                        <option value="4" <?php echo $rating === 4 ? 'selected' : ''; ?>>4+ Stars</option>
-                                        <option value="3" <?php echo $rating === 3 ? 'selected' : ''; ?>>3+ Stars</option>
-                                        <option value="2" <?php echo $rating === 2 ? 'selected' : ''; ?>>2+ Stars</option>
-                                    </select>
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold mb-2">Minimum Rating</label>
+                                    <div class="btn-group w-100 shadow-sm" role="group">
+                                        <input type="hidden" name="rating" id="ratingInput" value="<?php echo $rating; ?>">
+                                        <button type="button" class="btn <?php echo $rating == 0 ? 'btn-warning' : 'btn-outline-warning'; ?>" data-rating="0">Any</button>
+                                        <button type="button" class="btn <?php echo $rating == 1 ? 'btn-warning' : 'btn-outline-warning'; ?>" data-rating="1">★</button>
+                                        <button type="button" class="btn <?php echo $rating == 2 ? 'btn-warning' : 'btn-outline-warning'; ?>" data-rating="2">★★</button>
+                                        <button type="button" class="btn <?php echo $rating == 3 ? 'btn-warning' : 'btn-outline-warning'; ?>" data-rating="3">★★★</button>
+                                        <button type="button" class="btn <?php echo $rating == 4 ? 'btn-warning' : 'btn-outline-warning'; ?>" data-rating="4">★★★★</button>
+                                        <button type="button" class="btn <?php echo $rating == 5 ? 'btn-warning' : 'btn-outline-warning'; ?>" data-rating="5">★★★★★</button>
+                                    </div>
                                 </div>
                                 
-                                <div class="form-group">
-                                    <label class="form-label">Sort By</label>
-                                    <select class="form-select" name="sort">
-                                        <option value="rating" <?php echo $sort === 'rating' ? 'selected' : ''; ?>>Best Rated</option>
-                                        <option value="price_low" <?php echo $sort === 'price_low' ? 'selected' : ''; ?>>Price: Low to High</option>
-                                        <option value="price_high" <?php echo $sort === 'price_high' ? 'selected' : ''; ?>>Price: High to Low</option>
-                                    </select>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label class="form-label">&nbsp;</label>
-                                    <button type="submit" class="btn btn-primary w-100">
+                                <div class="d-flex gap-2">
+                                    <button type="submit" id="searchButton" class="btn btn-primary flex-grow-1">
                                         <i class="fas fa-search me-2"></i>Search
+                                    </button>
+                                    <button type="button" id="clearButton" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times"></i>
                                     </button>
                                 </div>
                             </form>
@@ -447,10 +597,31 @@ try {
     <?php if (empty($restaurants)): ?>
         <div class="col-12">
             <div class="alert alert-info">
-                No restaurants found matching your criteria.
+                <i class="fas fa-info-circle me-2"></i>
+                No restaurants found matching your search criteria.
             </div>
         </div>
     <?php else: ?>
+        <div class="col-12 mb-3">
+            <h4 class="results-heading">
+                <?php 
+                if ($isLocationSearch) {
+                    echo 'Restaurants near you';
+                } elseif (!empty($search)) {
+                    echo 'Search results for "' . htmlspecialchars($search) . '"';
+                } elseif (!empty($cuisine)) {
+                    echo htmlspecialchars($cuisine) . ' Restaurants';
+                } elseif ($feature === 'outdoor') {
+                    echo 'Restaurants with Outdoor Seating';
+                } elseif ($sort === 'newest') {
+                    echo 'Newly Added Restaurants';
+                } else {
+                    echo 'All Restaurants';
+                }
+                ?>
+                <span class="text-muted fs-6 ms-2">(<?php echo count($restaurants); ?> results)</span>
+            </h4>
+        </div>
         <?php foreach ($restaurants as $restaurant): ?>
             <div class="col-md-6 mb-4 restaurant-card" 
                  data-id="<?php echo $restaurant['restaurant_id']; ?>"
@@ -470,36 +641,49 @@ try {
                                 </span>
                             </div>
                         <?php endif; ?>
+                        
+                        <?php if (isset($restaurant['distance'])): ?>
+                        <div class="distance-badge">
+                            <i class="fas fa-location-arrow me-1"></i>
+                            <?php echo number_format($restaurant['distance'], 1); ?> km
+                        </div>
+                        <?php endif; ?>
                     </div>
 
                     <!-- Card Body -->
-                    <div class="card-body">
-                        <h5 class="card-title"><?php echo htmlspecialchars($restaurant['name']); ?></h5>
-                        <p class="card-text text-muted">
+                    <div class="card-body py-3">
+                        <h5 class="card-title mb-2"><?php echo htmlspecialchars($restaurant['name']); ?></h5>
+                        <p class="card-text text-muted small mb-2">
                             <i class="fas fa-utensils me-2"></i><?php echo htmlspecialchars($restaurant['cuisine_type']); ?>
                         </p>
-                        <p class="card-text">
+                        <p class="card-text small mb-2">
                             <i class="fas fa-map-marker-alt me-2"></i><?php echo htmlspecialchars($restaurant['address']); ?>
                         </p>
-                        <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex justify-content-between align-items-center mt-3">
                             <div class="rating">
                                 <?php for ($i = 1; $i <= 5; $i++): ?>
                                     <i class="fas fa-star <?php echo $i <= $restaurant['avg_rating'] ? 'text-warning' : 'text-muted'; ?>"></i>
                                 <?php endfor; ?>
-                                <span class="ms-2">(<?php echo $restaurant['review_count']; ?>)</span>
+                                <span class="ms-2 small text-muted">(<?php echo $restaurant['review_count']; ?>)</span>
                             </div>
-                            <span class="price-range">
+                            <span class="price-range fw-bold">
                                 <?php echo str_repeat('$', strlen($restaurant['price_range'])); ?>
                             </span>
                         </div>
                     </div>
 
                     <!-- Card Footer -->
-                    <div class="card-footer bg-transparent border-0">
-                        <a href="restaurant.php?id=<?php echo $restaurant['restaurant_id']; ?>" 
-                           class="btn btn-outline-primary w-100 rounded-pill">
-                            View Details
-                        </a>
+                    <div class="card-footer bg-transparent border-0 pt-0 pb-3">
+                        <div class="d-flex gap-2">
+                            <a href="restaurant.php?id=<?php echo $restaurant['restaurant_id']; ?>" 
+                               class="btn btn-sm btn-outline-primary flex-grow-1">
+                                <i class="fas fa-info-circle me-1"></i> Details
+                            </a>
+                            <a href="reservation.php?id=<?php echo $restaurant['restaurant_id']; ?>" 
+                               class="btn btn-sm btn-primary flex-grow-1">
+                                <i class="fas fa-calendar-check me-1"></i> Reserve
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -517,10 +701,23 @@ try {
     <!-- Custom JS -->
     <script>
         // Initialize map
-        const map = L.map('map').setView([0, 0], 2);
+        const map = L.map('map', {
+            zoomSnap: 0.1,
+            zoomDelta: 0.5,
+            wheelPxPerZoomLevel: 120
+        }).setView([0, 0], 2);
+        
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
+
+        // Disable default click behavior on popups to prevent auto-panning
+        map.on('popupopen', function(e) {
+            // Prevent auto-panning on popup open
+            if (e.popup._source && e.popup._source.options) {
+                e.popup._source.options.autoPan = false;
+            }
+        });
 
         // Store markers
         const markers = [];
@@ -529,32 +726,27 @@ try {
 
         // Custom marker icons based on rating
         function getMarkerIcon(rating, isActive = false) {
-            let color, icon;
+            // Define marker icon URL based on rating
+            let iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/';
             
             if (rating >= 4.5) {
-                color = 'success';
-                icon = 'fa-award';
+                iconUrl += 'marker-icon-2x-green.png'; // Top rated
             } else if (rating >= 4.0) {
-                color = 'primary';
-                icon = 'fa-utensils';
+                iconUrl += 'marker-icon-2x-blue.png'; // Very good
             } else if (rating >= 3.5) {
-                color = 'warning';
-                icon = 'fa-utensils';
+                iconUrl += 'marker-icon-2x-orange.png'; // Good
             } else {
-                color = 'danger';
-                icon = 'fa-utensils';
+                iconUrl += 'marker-icon-2x-red.png'; // Others
             }
             
-            const className = isActive ? 
-                `restaurant-marker bg-${color} pulse` : 
-                `restaurant-marker bg-${color}`;
-                
-            return L.divIcon({
-                className: className,
-                html: `<i class="fas ${icon}"></i>`,
-                iconSize: [36, 36],
-                iconAnchor: [18, 18],
-                popupAnchor: [0, -18]
+            // Use default marker with custom colors for better positioning
+            return L.icon({
+                iconUrl: iconUrl,
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
             });
         }
         
@@ -656,12 +848,14 @@ try {
 
         // Function to add marker
         function addMarker(restaurant) {
+            // Use custom marker icon with standard leaflet marker
             const marker = L.marker([restaurant.lat, restaurant.lng], {
-                icon: getMarkerIcon(restaurant.rating || 3)
+                icon: getMarkerIcon(restaurant.rating || 3, false)
             })
             .bindPopup(createPopupContent(restaurant), {
                 maxWidth: 300,
-                className: 'restaurant-popup'
+                className: 'restaurant-popup',
+                autoPan: false // Default is no auto-pan for map clicks
             });
             
             // Store additional data with marker
@@ -672,8 +866,9 @@ try {
             bounds.extend([restaurant.lat, restaurant.lng]);
             
             // Add click handler to marker
-            marker.on('click', function() {
-                highlightRestaurant(restaurant.id);
+            marker.on('click', function(e) {
+                // When clicking on map marker, don't auto-pan
+                highlightRestaurant(restaurant.id, false);
             });
             
             return marker;
@@ -707,7 +902,7 @@ try {
         }
 
         // Function to highlight a restaurant by ID
-        function highlightRestaurant(id) {
+        function highlightRestaurant(id, enableAutoPan = true) {
             // Remove active class from all cards
             document.querySelectorAll('.restaurant-card').forEach(card => {
                 card.classList.remove('active');
@@ -719,6 +914,10 @@ try {
                 const rating = marker.restaurantData.rating || 3;
                 marker.setIcon(getMarkerIcon(rating, false));
                 marker.setZIndexOffset(0);
+                // Close any open popups
+                if (marker.isPopupOpen()) {
+                    marker.closePopup();
+                }
             });
             
             // Find the card and marker for this restaurant
@@ -730,13 +929,21 @@ try {
                 card.classList.add('active');
                 card.querySelector('.card').classList.add('border-primary');
                 
-                // Highlight marker
-                marker.setIcon(getMarkerIcon(marker.restaurantData.rating, true));
+                // Highlight marker and open popup
+                marker.setIcon(getMarkerIcon(marker.restaurantData.rating || 3, true));
                 marker.setZIndexOffset(1000);
-                marker.openPopup();
                 
-                // Center map on selected restaurant
-                map.setView(marker.getLatLng(), 15);
+                // Get current popup and close it
+                if (marker.getPopup()) {
+                    marker.closePopup();
+                }
+                
+                // Open popup with autoPan enabled only when clicking from results
+                marker.bindPopup(createPopupContent(marker.restaurantData), {
+                    maxWidth: 300,
+                    className: 'restaurant-popup',
+                    autoPan: enableAutoPan // Auto-pan only when selected from results
+                }).openPopup();
                 
                 // Scroll the clicked card into view
                 card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -750,7 +957,8 @@ try {
         document.querySelectorAll('.restaurant-card').forEach(card => {
             card.addEventListener('click', function() {
                 const id = this.dataset.id;
-                highlightRestaurant(id);
+                // Enable auto-panning when clicking from results
+                highlightRestaurant(id, true);
             });
         });
 
@@ -762,6 +970,174 @@ try {
         // Handle map resize
         window.addEventListener('resize', function() {
             map.invalidateSize();
+        });
+    </script>
+
+    <!-- Enhanced Search Functionality -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elements
+            const searchForm = document.getElementById('searchForm');
+            const searchInput = document.getElementById('searchInput');
+            const cuisineSelect = document.getElementById('cuisineSelect');
+            const priceRangeButtons = document.querySelectorAll('#priceRangeButtons button');
+            const priceRangeInput = document.getElementById('priceRangeInput');
+            const ratingSlider = document.getElementById('ratingSlider');
+            const ratingInput = document.getElementById('ratingInput');
+            const sortSelect = document.getElementById('sortSelect');
+            const nearMeBtn = document.getElementById('nearMeBtn');
+            const clearButton = document.getElementById('clearButton');
+            
+            let searchTimeout;
+            const SEARCH_DELAY = 500; // ms delay for search to avoid excessive requests
+            
+            // Auto-search on input change with debounce
+            function setupAutoSearch() {
+                const filterElements = document.querySelectorAll('.filter-select, #ratingSlider');
+                
+                // Search input with debounce
+                searchInput.addEventListener('input', function() {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(() => {
+                        searchForm.submit();
+                    }, SEARCH_DELAY);
+                });
+                
+                // Filter selects - immediate search
+                filterElements.forEach(element => {
+                    element.addEventListener('change', function() {
+                        if (element.id === 'ratingSlider') {
+                            ratingInput.value = element.value;
+                        }
+                        searchForm.submit();
+                    });
+                });
+            }
+            
+            // Setup price range buttons
+            function setupPriceRangeButtons() {
+                priceRangeButtons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        // Update visual state
+                        priceRangeButtons.forEach(btn => {
+                            btn.classList.remove('btn-success');
+                            btn.classList.add('btn-outline-success');
+                        });
+                        
+                        this.classList.remove('btn-outline-success');
+                        this.classList.add('btn-success');
+                        
+                        // Update hidden input
+                        priceRangeInput.value = this.dataset.price;
+                        
+                        // Submit form
+                        searchForm.submit();
+                    });
+                });
+            }
+            
+            // Setup rating buttons
+            function setupRatingButtons() {
+                const ratingButtons = document.querySelectorAll('[data-rating]');
+                const ratingInput = document.getElementById('ratingInput');
+                
+                ratingButtons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        const rating = parseInt(this.dataset.rating);
+                        
+                        // Update visual state
+                        ratingButtons.forEach(btn => {
+                            btn.classList.remove('btn-warning');
+                            btn.classList.add('btn-outline-warning');
+                        });
+                        
+                        // Update button state
+                        this.classList.remove('btn-outline-warning');
+                        this.classList.add('btn-warning');
+                        
+                        // Update hidden input
+                        ratingInput.value = rating;
+                        
+                        // Submit form
+                        searchForm.submit();
+                    });
+                });
+            }
+            
+            // Setup location search (Near Me button)
+            function setupLocationSearch() {
+                nearMeBtn.addEventListener('click', function() {
+                    if (navigator.geolocation) {
+                        // Change button state to show loading
+                        nearMeBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+                        nearMeBtn.disabled = true;
+                        
+                        navigator.geolocation.getCurrentPosition(
+                            function(position) {
+                                // Add location parameters to the form
+                                const latInput = document.createElement('input');
+                                latInput.type = 'hidden';
+                                latInput.name = 'lat';
+                                latInput.value = position.coords.latitude;
+                                
+                                const lngInput = document.createElement('input');
+                                lngInput.type = 'hidden';
+                                lngInput.name = 'lng';
+                                lngInput.value = position.coords.longitude;
+                                
+                                // Set sort order to distance
+                                const sortInput = document.createElement('input');
+                                sortInput.type = 'hidden';
+                                sortInput.name = 'sort';
+                                sortInput.value = 'distance';
+                                
+                                searchForm.appendChild(latInput);
+                                searchForm.appendChild(lngInput);
+                                searchForm.appendChild(sortInput);
+                                
+                                // Submit the form
+                                searchForm.submit();
+                            },
+                            function(error) {
+                                // Reset button
+                                nearMeBtn.innerHTML = '<i class="fas fa-location-arrow"></i>';
+                                nearMeBtn.disabled = false;
+                                
+                                // Show error
+                                alert("Error finding your location: " + error.message);
+                            }
+                        );
+                    } else {
+                        alert("Geolocation is not supported by your browser");
+                    }
+                });
+            }
+            
+            // Setup clear button
+            function setupClearButton() {
+                clearButton.addEventListener('click', function() {
+                    window.location.href = 'search.php';
+                });
+            }
+            
+            // Initialize all interactive elements
+            setupAutoSearch();
+            setupPriceRangeButtons();
+            setupRatingButtons();
+            setupLocationSearch();
+            setupClearButton();
+            
+            // Update restaurant cards on map interaction
+            markers.forEach(marker => {
+                marker.on('click', function() {
+                    const id = this.restaurantData.id;
+                    const card = document.querySelector(`.restaurant-card[data-id="${id}"]`);
+                    if (card) {
+                        // Scroll to the card with smooth animation
+                        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                });
+            });
         });
     </script>
 </body>

@@ -60,6 +60,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($blocked) {
             $error_message = "Sorry, this time slot is no longer available. Please select another time.";
         } else {
+            // Set all reservations to pending status by default, requiring owner approval
+            $deposit_status = 'not_required';
+            $deposit_amount = 0;
+            $reservation_status = 'pending';
+            $deposit_payment_slip = "";
+            
             // Create reservation record
             if ($restaurant['deposit_required']) {
                 // If deposit is required, set status to pending
@@ -100,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // If no deposit required, set status to not_required and confirm reservation
                 $deposit_status = 'not_required';
                 $deposit_amount = 0;
-                $reservation_status = 'confirmed';
+                $reservation_status = 'pending';
                 $deposit_payment_slip = "";
             }
             

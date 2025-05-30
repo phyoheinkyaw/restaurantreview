@@ -66,9 +66,11 @@ try {
                     <div class="card-body p-md-5">
                         <div class="text-center mb-4">
                             <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
-                            <h1 class="mt-3">Reservation <?php echo ($reservation['deposit_status'] === 'pending') ? 'Submitted' : 'Confirmed'; ?></h1>
+                            <h1 class="mt-3">Reservation <?php echo ($reservation['status'] === 'confirmed') ? 'Confirmed' : 'Submitted'; ?></h1>
                             <?php if ($reservation['deposit_status'] === 'pending'): ?>
                                 <p class="text-muted">Your reservation is pending deposit verification</p>
+                            <?php elseif ($reservation['status'] === 'pending'): ?>
+                                <p class="text-muted">Your reservation is pending owner approval</p>
                             <?php else: ?>
                                 <p class="text-muted">Your reservation has been confirmed</p>
                             <?php endif; ?>

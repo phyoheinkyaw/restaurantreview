@@ -28,22 +28,22 @@ session_start();
                     <!-- Search Form -->
                     <form action="search.php" method="GET" class="search-form mb-4">
                         <div class="input-group">
-                            <input type="text" name="q" class="form-control" placeholder="Search restaurants, cuisines, or locations...">
+                            <input type="text" name="search" class="form-control" placeholder="Search restaurants or cuisines">
                             <button class="btn btn-primary" type="submit">
                                 <i class="fas fa-search me-1"></i> Search
                             </button>
                         </div>
                         
                         <!-- Quick Filters -->
-                        <div class="quick-filters mt-3 d-flex flex-wrap">
-                            <a href="search.php?cuisine=italian" class="badge rounded-pill bg-light text-dark me-2 mb-2 px-3 py-2">Italian</a>
-                            <a href="search.php?cuisine=japanese" class="badge rounded-pill bg-light text-dark me-2 mb-2 px-3 py-2">Japanese</a>
-                            <a href="search.php?cuisine=mexican" class="badge rounded-pill bg-light text-dark me-2 mb-2 px-3 py-2">Mexican</a>
-                            <a href="search.php?cuisine=indian" class="badge rounded-pill bg-light text-dark me-2 mb-2 px-3 py-2">Indian</a>
-                            <a href="search.php?feature=outdoor" class="badge rounded-pill bg-light text-dark me-2 mb-2 px-3 py-2">Outdoor Seating</a>
-                            <a href="search.php?sort=newest" class="badge rounded-pill bg-light text-dark mb-2 px-3 py-2">Newly Added</a>
+                        <div class="quick-filters mt-3 d-flex flex-wrap" id="popularCuisines">
+                            <span class="badge rounded-pill bg-light text-dark me-2 mb-2 px-3 py-2">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                Loading...
+                            </span>
                         </div>
-                </form>
+                    </form>
                 </div>
                 <div class="col-lg-6 d-none d-lg-block">
                     <img src="assets/images/hero-image.jpg" alt="Restaurant dining experience" class="img-fluid rounded-3 shadow">
@@ -82,10 +82,10 @@ session_start();
                                     
                                     <h6>Filter by Price Range:</h6>
                                     <div id="price-filters" class="btn-group mb-3" role="group">
-                                        <button type="button" class="btn btn-outline-secondary" data-price="$">$</button>
-                                        <button type="button" class="btn btn-outline-secondary" data-price="$$">$$</button>
-                                        <button type="button" class="btn btn-outline-secondary" data-price="$$$">$$$</button>
-                                        <button type="button" class="btn btn-outline-secondary" data-price="$$$$">$$$$</button>
+                                        <button type="button" class="btn btn-secondary" data-price="$">$</button>
+                                        <button type="button" class="btn btn-secondary" data-price="$$">$$</button>
+                                        <button type="button" class="btn btn-secondary" data-price="$$$">$$$</button>
+                                        <button type="button" class="btn btn-secondary" data-price="$$$$">$$$$</button>
                                     </div>
                                     
                                     <h6>Marker Colors:</h6>
@@ -124,7 +124,7 @@ session_start();
                         <div class="map-container">
                             <div id="map" class="rounded shadow"></div>
                             <div class="map-controls mt-2 d-flex justify-content-end">
-                                <button id="locate-me" class="btn btn-sm near-me-btn me-2" title="Find restaurants near me">
+                                <button id="locate-me" class="btn btn-sm btn-primary me-2" title="Find restaurants near me">
                                     <i class="fas fa-location-arrow"></i> Near Me
                                 </button>
                                 <button id="reset-map" class="btn btn-sm btn-secondary" title="Reset map view">

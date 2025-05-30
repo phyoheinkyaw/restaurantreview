@@ -9,6 +9,29 @@ if (!isLoggedIn()) {
     exit();
 }
 
+// Random check to auto-update reservation statuses (1/10 chance to run)
+if (rand(1, 10) === 1) {
+    try {
+        $db = getDB();
+        
+        // Mark past confirmed reservations as completed
+        $stmt = $db->prepare("
+            UPDATE reservations 
+            SET status = 'completed' 
+            WHERE status = 'confirmed' 
+            AND CONCAT(reservation_date, ' ', reservation_time) < NOW()
+        ");
+        $stmt->execute();
+        
+        // Log how many reservations were updated
+        if ($stmt->rowCount() > 0) {
+            error_log("Auto-updated " . $stmt->rowCount() . " past reservations to completed status");
+        }
+    } catch (PDOException $e) {
+        error_log("Error in auto-update reservation status: " . $e->getMessage());
+    }
+}
+
 $user_id = $_SESSION['user_id'];
 $user = getUserData($user_id);
 
@@ -52,6 +75,22 @@ try {
     <?php include 'includes/header.php'; ?>
 
     <div class="container py-5">
+        <?php if (isset($_SESSION['success_message'])): ?>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i> <?php echo $_SESSION['success_message']; ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <?php unset($_SESSION['success_message']); ?>
+        <?php endif; ?>
+        
+        <?php if (isset($_SESSION['error_message'])): ?>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i> <?php echo $_SESSION['error_message']; ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <?php unset($_SESSION['error_message']); ?>
+        <?php endif; ?>
+        
         <div class="row">
             <!-- Sidebar -->
             <div class="col-lg-3 mb-4">
@@ -395,6 +434,10 @@ try {
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    <div class="alert alert-warning mb-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Important:</strong> Reservations cannot be cancelled less than 5 hours before the scheduled time.
+                    </div>
                     <p>Are you sure you want to cancel this reservation? This action cannot be undone.</p>
                 </div>
                 <div class="modal-footer">
@@ -463,6 +506,7 @@ try {
                             <div class="mb-3">
                                 <label for="status" class="form-label fw-bold">Status</label>
                                 <input type="text" class="form-control" id="status" readonly>
+                                <div id="statusMessage" class="form-text mt-1" style="display: none;"></div>
                             </div>
                             <div class="mb-3">
                                 <label for="depositStatus" class="form-label fw-bold">Deposit Status</label>
@@ -556,10 +600,17 @@ try {
                 const statusInput = document.getElementById('status');
                 statusInput.value = status;
                 statusInput.classList.remove('bg-success', 'bg-warning', 'bg-danger', 'bg-info', 'bg-secondary', 'text-white');
+                
+                // Get the status message element
+                const statusMessage = document.getElementById('statusMessage');
+                statusMessage.style.display = 'none';
+                
                 if (status === 'Confirmed') {
                     statusInput.classList.add('bg-success', 'text-white');
                 } else if (status === 'Pending') {
                     statusInput.classList.add('bg-warning');
+                    statusMessage.innerHTML = '<i class="fas fa-info-circle me-1"></i> Your reservation is awaiting approval from the restaurant owner. You will receive a notification once it is confirmed.';
+                    statusMessage.style.display = 'block';
                 } else if (status === 'Cancelled') {
                     statusInput.classList.add('bg-danger', 'text-white');
                 } else if (status === 'Completed') {

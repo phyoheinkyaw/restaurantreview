@@ -87,7 +87,7 @@ $avgRatings = calculateAverageRatings($restaurant_id);
     <?php include 'includes/header.php'; ?>
 
     <!-- Restaurant Header -->
-    <section class="restaurant-header pt-5">
+    <section class="restaurant-header pt-5 pb-3 bg-light">
         <div class="container">
             <div class="row">
                 <div class="col-lg-8">
@@ -99,23 +99,23 @@ $avgRatings = calculateAverageRatings($restaurant_id);
                         </ol>
                     </nav>
 
-                    <h1 class="restaurant-name"><?php echo htmlspecialchars($restaurant['name']); ?></h1>
+                    <h1 class="restaurant-name fw-bold mb-2"><?php echo htmlspecialchars($restaurant['name']); ?></h1>
 
-                    <div class="restaurant-meta">
-                        <span class="cuisine-type">
-                            <i class="fas fa-utensils"></i> <?php echo htmlspecialchars($restaurant['cuisine_type']); ?>
+                    <div class="restaurant-meta d-flex flex-wrap gap-3 align-items-center">
+                        <span class="cuisine-type badge bg-light text-dark">
+                            <i class="fas fa-utensils me-1"></i> <?php echo htmlspecialchars($restaurant['cuisine_type']); ?>
                         </span>
-                        <span class="price-range">
-                            <i class="fas fa-dollar-sign"></i>
+                        <span class="price-range badge bg-light text-dark">
+                            <i class="fas fa-dollar-sign me-1"></i>
                             <?php echo formatPriceRange($restaurant['price_range']); ?>
                         </span>
-                        <span class="rating">
-                            <i class="fas fa-star text-warning"></i> <?php echo formatRating($avgRatings['overall']); ?>
+                        <span class="rating badge bg-warning text-dark">
+                            <i class="fas fa-star me-1"></i> <?php echo formatRating($avgRatings['overall']); ?>
                         </span>
                     </div>
                 </div>
 
-                <div class="col-lg-4 text-lg-end">
+                <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
                     <div class="action-buttons">
                         <?php if (isset($_SESSION['user_id'])): ?>
                         <a href="reservation.php?id=<?php echo $restaurant_id; ?>" class="btn btn-primary me-2">
@@ -218,22 +218,25 @@ $avgRatings = calculateAverageRatings($restaurant_id);
                         <div class="row">
                             <?php foreach ($menu as $item): ?>
                             <div class="col-md-6 mb-4">
-                                <div class="menu-item">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div class="d-flex">
-                                            <div class="menu-item-image me-3">
-                                                <img src="uploads/menus/<?php echo $item['image_url'] ?? 'https://placehold.co/80x80/2dc2a3/333333?text=' . htmlspecialchars($item['name']); ?>"
-                                                    class="img-fluid rounded"
-                                                    alt="<?php echo htmlspecialchars($item['name']); ?>"
-                                                    style="width: 80px; height: 80px; object-fit: cover;">
+                                <div class="card h-100 menu-item-card">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="d-flex">
+                                                <div class="menu-item-image me-3">
+                                                    <img src="uploads/menus/<?php echo $item['image'] ?? 'https://placehold.co/80x80/2dc2a3/333333?text=' . urlencode(htmlspecialchars($item['name'])); ?>"
+                                                        class="img-fluid rounded"
+                                                        alt="<?php echo htmlspecialchars($item['name']); ?>"
+                                                        style="width: 80px; height: 80px; object-fit: cover;">
+                                                </div>
+                                                <div>
+                                                    <h5 class="card-title mb-1"><?php echo htmlspecialchars($item['name']); ?></h5>
+                                                    <p class="text-muted small mb-2"><?php echo htmlspecialchars($item['category'] ?? ''); ?></p>
+                                                    <p class="card-text text-muted small mb-0">
+                                                        <?php echo htmlspecialchars($item['description']); ?></p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <h5 class="mb-1"><?php echo htmlspecialchars($item['name']); ?></h5>
-                                                <p class="text-muted mb-0">
-                                                    <?php echo htmlspecialchars($item['description']); ?></p>
-                                            </div>
+                                            <span class="price badge bg-light text-dark fs-6">$<?php echo number_format($item['price'], 2); ?></span>
                                         </div>
-                                        <span class="price">$<?php echo number_format($item['price'], 2); ?></span>
                                     </div>
                                 </div>
                             </div>
@@ -370,65 +373,72 @@ $avgRatings = calculateAverageRatings($restaurant_id);
 
                         <!-- Reviews List -->
                         <div class="reviews-list">
-                            <?php foreach ($reviews as $review): ?>
-                            <div class="review-item mb-4">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <div>
-                                        <h5 class="mb-1"><?php echo htmlspecialchars($review['username']); ?></h5>
-                                        <div class="stars mb-1">
-                                            <?php for ($i = 1; $i <= 5; $i++): ?>
-                                            <i
-                                                class="fas fa-star <?php echo $i <= $review['overall_rating'] ? 'text-warning' : 'text-muted'; ?>"></i>
-                                            <?php endfor; ?>
-                                        </div>
-                                        <small
-                                            class="text-muted"><?php echo formatDate($review['created_at']); ?></small>
-                                    </div>
-                                    <div class="rating-details">
-                                        <span class="badge bg-light text-dark me-1">Clean:
-                                            <?php echo formatRating($review['cleanliness_rating']); ?></span>
-                                        <span class="badge bg-light text-dark me-1">Taste:
-                                            <?php echo formatRating($review['taste_rating']); ?></span>
-                                        <span class="badge bg-light text-dark">Service:
-                                            <?php echo formatRating($review['service_rating']); ?></span>
-                                        <span class="badge bg-light text-dark">Price:
-                                            <?php echo formatRating($review['price_rating']); ?></span>
-                                        <span class="badge bg-light text-dark">Parking:
-                                            <?php echo formatRating($review['parking_rating']); ?></span>
-                                    </div>
-                                </div>
-                                <p class="mb-2"><?php echo nl2br(htmlspecialchars($review['comment'])); ?></p>
-                                <?php if (!empty($review['images'])): ?>
-                                <div class="review-images d-flex flex-wrap gap-2 mb-2">
-                                    <?php foreach (json_decode($review['images'], true) as $index => $image): ?>
-                                    <a href="<?php echo htmlspecialchars($image); ?>" data-bs-toggle="modal"
-                                        data-bs-target="#imageModal<?php echo $review['review_id']; ?>-<?php echo $index; ?>"
-                                        class="review-image-thumbnail">
-                                        <img src="<?php echo htmlspecialchars($image); ?>" class="img-thumbnail"
-                                            alt="Review Image" style="width: 100px; height: 100px; object-fit: cover;">
-                                    </a>
-                                    <!-- Modal for this image -->
-                                    <div class="modal fade"
-                                        id="imageModal<?php echo $review['review_id']; ?>-<?php echo $index; ?>"
-                                        tabindex="-1" aria-hidden="true">
-                                        <div class="modal-dialog modal-dialog-centered modal-lg">
-                                            <div class="modal-content">
-                                                <div class="modal-body p-0">
-                                                    <button type="button"
-                                                        class="btn-close position-absolute top-0 end-0 m-2 bg-white"
-                                                        data-bs-dismiss="modal" aria-label="Close"></button>
-                                                    <img src="<?php echo htmlspecialchars($image); ?>"
-                                                        class="img-fluid w-100" alt="Review Image">
+                            <?php if (count($reviews) > 0): ?>
+                                <?php foreach ($reviews as $review): ?>
+                                <div class="review-item card mb-4">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-3">
+                                            <div>
+                                                <h5 class="card-title mb-1"><?php echo htmlspecialchars($review['username']); ?></h5>
+                                                <div class="stars mb-1">
+                                                    <?php for ($i = 1; $i <= 5; $i++): ?>
+                                                    <i
+                                                        class="fas fa-star <?php echo $i <= $review['overall_rating'] ? 'text-warning' : 'text-muted'; ?>"></i>
+                                                    <?php endfor; ?>
                                                 </div>
+                                                <small
+                                                    class="text-muted"><?php echo formatDate($review['created_at']); ?></small>
+                                            </div>
+                                            <div class="rating-details d-flex flex-wrap gap-1">
+                                                <span class="badge bg-light text-dark me-1">Clean:
+                                                    <?php echo formatRating($review['cleanliness_rating']); ?></span>
+                                                <span class="badge bg-light text-dark me-1">Taste:
+                                                    <?php echo formatRating($review['taste_rating']); ?></span>
+                                                <span class="badge bg-light text-dark me-1">Service:
+                                                    <?php echo formatRating($review['service_rating']); ?></span>
+                                                <span class="badge bg-light text-dark me-1">Price:
+                                                    <?php echo formatRating($review['price_rating']); ?></span>
+                                                <span class="badge bg-light text-dark">Parking:
+                                                    <?php echo formatRating($review['parking_rating']); ?></span>
                                             </div>
                                         </div>
+                                        <p class="card-text mb-3"><?php echo nl2br(htmlspecialchars($review['comment'])); ?></p>
+                                        <?php if (!empty($review['images'])): ?>
+                                        <div class="review-images d-flex flex-wrap gap-2 mb-2">
+                                            <?php foreach (json_decode($review['images'], true) as $index => $image): ?>
+                                            <a href="<?php echo htmlspecialchars($image); ?>" data-bs-toggle="modal"
+                                                data-bs-target="#imageModal<?php echo $review['review_id']; ?>-<?php echo $index; ?>"
+                                                class="review-image-thumbnail">
+                                                <img src="<?php echo htmlspecialchars($image); ?>" class="img-thumbnail"
+                                                    alt="Review Image" style="width: 100px; height: 100px; object-fit: cover;">
+                                            </a>
+                                            <!-- Modal for this image -->
+                                            <div class="modal fade"
+                                                id="imageModal<?php echo $review['review_id']; ?>-<?php echo $index; ?>"
+                                                tabindex="-1" aria-hidden="true">
+                                                <div class="modal-dialog modal-dialog-centered modal-lg">
+                                                    <div class="modal-content">
+                                                        <div class="modal-body p-0">
+                                                            <button type="button"
+                                                                class="btn-close position-absolute top-0 end-0 m-2 bg-white"
+                                                                data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            <img src="<?php echo htmlspecialchars($image); ?>"
+                                                                class="img-fluid w-100" alt="Review Image">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                        <?php endif; ?>
                                     </div>
-                                    <?php endforeach; ?>
                                 </div>
-                                <?php endif; ?>
-                            </div>
-                            <hr />
-                            <?php endforeach; ?>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <div class="alert alert-info">
+                                    There are no reviews yet for this restaurant. Be the first to write a review!
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -449,21 +459,35 @@ $avgRatings = calculateAverageRatings($restaurant_id);
                             <ul class="list-unstyled mb-0">
                                 <li class="mb-2">
                                     <i class="fas fa-clock me-2"></i>
-                                    <?php echo isRestaurantOpen($restaurant['opening_hours']) ? 
-                                        '<span class="text-success">Open Now</span>' : 
-                                        '<span class="text-danger">Closed</span>'; ?>
+                                    <?php if(isRestaurantOpen($restaurant['opening_hours'])): ?>
+                                        <span class="badge bg-success">Open Now</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-danger">Closed</span>
+                                    <?php endif; ?>
                                 </li>
                                 <li class="mb-2">
                                     <i class="fas fa-car me-2"></i>
-                                    <?php echo $restaurant['has_parking'] ? 'Parking Available' : 'No Parking'; ?>
+                                    <?php if($restaurant['has_parking']): ?>
+                                        <span class="badge bg-light text-dark">Parking Available</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-light text-muted">No Parking</span>
+                                    <?php endif; ?>
                                 </li>
                                 <li class="mb-2">
                                     <i class="fas fa-wheelchair me-2"></i>
-                                    Wheelchair Accessible
+                                    <?php if($restaurant['is_wheelchair_accessible']): ?>
+                                        <span class="badge bg-light text-dark">Wheelchair Accessible</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-light text-muted">Not Wheelchair Accessible</span>
+                                    <?php endif; ?>
                                 </li>
                                 <li>
                                     <i class="fas fa-wifi me-2"></i>
-                                    Free WiFi
+                                    <?php if($restaurant['has_wifi']): ?>
+                                        <span class="badge bg-light text-dark">Free WiFi</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-light text-muted">No WiFi</span>
+                                    <?php endif; ?>
                                 </li>
                             </ul>
                         </div>
@@ -626,10 +650,40 @@ $avgRatings = calculateAverageRatings($restaurant_id);
             });
         });
 
+        // Function to show Bootstrap alerts
+        function showAlert(message, type = 'success') {
+            // Create alert container if it doesn't exist
+            let alertContainer = document.querySelector('.alert-container');
+            if (!alertContainer) {
+                alertContainer = document.createElement('div');
+                alertContainer.className = 'alert-container position-fixed top-0 end-0 p-3';
+                alertContainer.style.zIndex = "1050";
+                document.body.appendChild(alertContainer);
+            }
+            
+            // Create the alert
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            
+            // Add to container
+            alertContainer.appendChild(alert);
+            
+            // Auto dismiss after 5 seconds
+            setTimeout(() => {
+                alert.classList.remove('show');
+                setTimeout(() => alert.remove(), 150);
+            }, 5000);
+        }
+
         // Handle file input and preview
         const fileInput = document.querySelector('input[type="file"]');
         const previewContainer = document.querySelector('.photo-preview');
-        const uploadLabel = fileInput.previousElementSibling;
+        const uploadLabel = fileInput?.previousElementSibling;
 
         if (fileInput) {
             fileInput.addEventListener('change', function() {
@@ -709,6 +763,13 @@ $avgRatings = calculateAverageRatings($restaurant_id);
                 .photo-preview-item .remove-photo:hover {
                     background: #c82333;
                 }
+                .alert-container {
+                    max-width: 350px;
+                }
+                .alert-container .alert {
+                    margin-bottom: 1rem;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                }
             `;
         document.head.appendChild(style);
 
@@ -752,7 +813,7 @@ $avgRatings = calculateAverageRatings($restaurant_id);
                         .then(data => {
                             console.log('Response:', data);
                             if (data.success) {
-                                alert('Review submitted successfully!');
+                                showAlert('Review submitted successfully!', 'success');
                                 // Reset form
                                 this.reset();
                                 // Reset textarea height
@@ -773,12 +834,12 @@ $avgRatings = calculateAverageRatings($restaurant_id);
                                 // Reload page to show new review
                                 setTimeout(() => window.location.reload(), 1500);
                             } else {
-                                alert(data.message || 'Error submitting review');
+                                showAlert(data.message || 'Error submitting review', 'danger');
                             }
                         })
                         .catch(error => {
                             console.error('Error:', error);
-                            alert('Error submitting review: ' + error.message);
+                            showAlert('Error submitting review: ' + error.message, 'danger');
                         })
                         .finally(() => {
                             // Reset button state
@@ -786,7 +847,7 @@ $avgRatings = calculateAverageRatings($restaurant_id);
                             submitBtn.innerHTML = originalText;
                         });
                 } else {
-                    alert('Please fill in all required fields');
+                    showAlert('Please fill in all required fields', 'warning');
                 }
             });
         }

@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             cuisineTypes.forEach(cuisine => {
                 const button = document.createElement('button');
-                button.className = 'btn btn-sm btn-outline-primary';
+                button.className = 'btn btn-sm btn-primary';
                 button.setAttribute('data-cuisine', cuisine);
                 button.textContent = cuisine;
                 button.addEventListener('click', () => toggleCuisineFilter(cuisine));
@@ -72,6 +72,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Initialize filter state
             priceFilters[price] = true;
+            
+            // Set initial styling (filled)
+            button.classList.remove('btn-outline-secondary');
+            button.classList.add('btn-secondary');
         });
         
         // Create markers for each restaurant
@@ -211,11 +215,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const button = document.querySelector(`button[data-cuisine="${cuisine}"]`);
         if (button) {
             if (cuisineFilters[cuisine]) {
-                button.classList.remove('btn-primary');
-                button.classList.add('btn-outline-primary');
-            } else {
+                // When this cuisine is visible (not filtered out), button should be filled
                 button.classList.remove('btn-outline-primary');
                 button.classList.add('btn-primary');
+            } else {
+                // When this cuisine is filtered out, button should be outlined
+                button.classList.remove('btn-primary');
+                button.classList.add('btn-outline-primary');
             }
         }
         
@@ -230,11 +236,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const button = document.querySelector(`button[data-price="${price}"]`);
         if (button) {
             if (priceFilters[price]) {
-                button.classList.remove('btn-secondary');
-                button.classList.add('btn-outline-secondary');
-            } else {
+                // When this price range is visible (not filtered out), button should be filled
                 button.classList.remove('btn-outline-secondary');
                 button.classList.add('btn-secondary');
+            } else {
+                // When this price range is filtered out, button should be outlined
+                button.classList.remove('btn-secondary');
+                button.classList.add('btn-outline-secondary');
             }
         }
         
@@ -282,6 +290,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Locate user function
     document.getElementById('locate-me')?.addEventListener('click', function() {
+        // Toggle button style when clicked - switch from filled to outline
+        this.classList.remove('btn-primary');
+        this.classList.add('btn-outline-primary');
+        
+        // Restore style after 2 seconds
+        setTimeout(() => {
+            this.classList.remove('btn-outline-primary');
+            this.classList.add('btn-primary');
+        }, 2000);
+        
         if (navigator.geolocation) {
             updateRecentActivity('Finding your location...');
             
@@ -325,6 +343,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Reset map view
     document.getElementById('reset-map')?.addEventListener('click', function() {
+        // Toggle button style when clicked - switch from filled to outline
+        this.classList.remove('btn-secondary');
+        this.classList.add('btn-outline-secondary');
+        
+        // Restore style after 2 seconds
+        setTimeout(() => {
+            this.classList.remove('btn-outline-secondary');
+            this.classList.add('btn-secondary');
+        }, 2000);
+        
         map.setView([40.7130, -74.0060], 13);
         updateRecentActivity('Map view reset');
     });

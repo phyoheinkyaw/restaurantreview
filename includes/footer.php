@@ -96,3 +96,33 @@
 </script>
 <!-- Custom JS -->
 <script src="assets/js/main.js"></script>
+
+<!-- Check for past reservations and update their status -->
+<?php if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'user'): ?>
+<script>
+    // Run this check once per session with a 25% chance
+    if (Math.random() < 0.25) {
+        fetch('update_reservation_status.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                check_token: '<?php echo md5(session_id() . $_SESSION['user_id']); ?>'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.updated > 0) {
+                console.log('Updated ' + data.updated + ' reservation(s) to completed status');
+            }
+        })
+        .catch(error => {
+            console.error('Error checking reservation status:', error);
+        });
+    }
+</script>
+<?php endif; ?>
+
+</body>
+</html>
