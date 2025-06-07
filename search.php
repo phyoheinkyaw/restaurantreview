@@ -1104,11 +1104,11 @@ try {
                                 nearMeBtn.disabled = false;
                                 
                                 // Show error
-                                alert("Error finding your location: " + error.message);
+                                alertify.error("Error finding your location: " + error.message);
                             }
                         );
                     } else {
-                        alert("Geolocation is not supported by your browser");
+                        alertify.error("Geolocation is not supported by your browser");
                     }
                 });
             }

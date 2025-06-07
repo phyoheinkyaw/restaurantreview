@@ -311,9 +311,7 @@ if (json_last_error() !== JSON_ERROR_NONE) {
                         confirmBtn.href = `reservations.php?action=confirm&id=${props.reservation_id}`;
                         confirmBtn.className = 'btn btn-success';
                         confirmBtn.innerHTML = '<i class="fas fa-check me-1"></i> Confirm';
-                        confirmBtn.onclick = function() {
-                            return confirm('Are you sure you want to confirm this reservation?');
-                        };
+                        confirmBtn.setAttribute('data-confirm', 'Are you sure you want to confirm this reservation?');
                         actionButtonsContainer.appendChild(confirmBtn);
                     }
                     
@@ -323,9 +321,7 @@ if (json_last_error() !== JSON_ERROR_NONE) {
                         cancelBtn.href = `reservations.php?action=cancel&id=${props.reservation_id}`;
                         cancelBtn.className = 'btn btn-danger ms-2';
                         cancelBtn.innerHTML = '<i class="fas fa-ban me-1"></i> Cancel';
-                        cancelBtn.onclick = function() {
-                            return confirm('Are you sure you want to cancel this reservation?');
-                        };
+                        cancelBtn.setAttribute('data-confirm', 'Are you sure you want to cancel this reservation?');
                         actionButtonsContainer.appendChild(cancelBtn);
                     }
                     
@@ -335,9 +331,7 @@ if (json_last_error() !== JSON_ERROR_NONE) {
                         completeBtn.href = `reservations.php?action=complete&id=${props.reservation_id}`;
                         completeBtn.className = 'btn btn-info';
                         completeBtn.innerHTML = '<i class="fas fa-check-double me-1"></i> Complete';
-                        completeBtn.onclick = function() {
-                            return confirm('Are you sure you want to mark this reservation as completed?');
-                        };
+                        completeBtn.setAttribute('data-confirm', 'Are you sure you want to mark this reservation as completed?');
                         actionButtonsContainer.appendChild(completeBtn);
                     }
                     

@@ -210,7 +210,7 @@ if (!$admin) {
                         <button class="btn p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <div class="admin-profile">
                                 <?php if (!empty($admin['profile_image'])): ?>
-                                    <img src="../<?php echo $admin['profile_image']; ?>" alt="Admin">
+                                    <img src="../uploads/profile/<?php echo $admin['profile_image']; ?>" alt="Admin">
                                 <?php else: ?>
                                     <div class="d-flex align-items-center justify-content-center bg-primary text-white rounded-circle" style="width: 40px; height: 40px;">
                                         <?php echo strtoupper(substr($admin['first_name'], 0, 1)); ?>

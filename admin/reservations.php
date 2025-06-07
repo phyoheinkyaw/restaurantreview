@@ -325,28 +325,28 @@ $restaurants = $restaurant_result->fetch_all(MYSQLI_ASSOC);
                                             </li>
                                             <?php if ($reservation['status'] === 'pending'): ?>
                                                 <li>
-                                                    <a class="dropdown-item" href="reservations.php?action=confirm&id=<?php echo $reservation['reservation_id']; ?>" onclick="return confirm('Are you sure you want to confirm this reservation?')">
+                                                    <a class="dropdown-item" href="reservations.php?action=confirm&id=<?php echo $reservation['reservation_id']; ?>" data-confirm="Are you sure you want to confirm this reservation?">
                                                         <i class="fas fa-check me-2"></i> Confirm
                                                     </a>
                                                 </li>
                                             <?php endif; ?>
                                             <?php if ($reservation['status'] === 'pending' || $reservation['status'] === 'confirmed'): ?>
                                                 <li>
-                                                    <a class="dropdown-item" href="reservations.php?action=cancel&id=<?php echo $reservation['reservation_id']; ?>" onclick="return confirm('Are you sure you want to cancel this reservation?')">
+                                                    <a class="dropdown-item" href="reservations.php?action=cancel&id=<?php echo $reservation['reservation_id']; ?>" data-confirm="Are you sure you want to cancel this reservation?">
                                                         <i class="fas fa-ban me-2"></i> Cancel
                                                     </a>
                                                 </li>
                                             <?php endif; ?>
                                             <?php if ($reservation['status'] === 'confirmed'): ?>
                                                 <li>
-                                                    <a class="dropdown-item" href="reservations.php?action=complete&id=<?php echo $reservation['reservation_id']; ?>" onclick="return confirm('Are you sure you want to mark this reservation as completed?')">
+                                                    <a class="dropdown-item" href="reservations.php?action=complete&id=<?php echo $reservation['reservation_id']; ?>" data-confirm="Are you sure you want to mark this reservation as completed?">
                                                         <i class="fas fa-check-double me-2"></i> Mark as Completed
                                                     </a>
                                                 </li>
                                             <?php endif; ?>
                                             <li><hr class="dropdown-divider"></li>
                                             <li>
-                                                <a class="dropdown-item text-danger" href="reservations.php?action=delete&id=<?php echo $reservation['reservation_id']; ?>" onclick="return confirm('Are you sure you want to delete this reservation? This action cannot be undone.')">
+                                                <a class="dropdown-item text-danger" href="reservations.php?action=delete&id=<?php echo $reservation['reservation_id']; ?>" data-confirm="Are you sure you want to delete this reservation? This action cannot be undone.">
                                                     <i class="fas fa-trash-alt me-2"></i> Delete
                                                 </a>
                                             </li>

@@ -78,9 +78,11 @@ document.addEventListener('DOMContentLoaded', function() {
             var targetUrl = this.getAttribute('href');
             var message = this.dataset.confirmMessage || 'Are you sure you want to perform this action?';
             
-            if (confirm(message)) {
+            alertify.confirm('Confirm Action', message, function() {
                 window.location.href = targetUrl;
-            }
+            }, function() {
+                // User clicked Cancel
+            });
         });
     });
     

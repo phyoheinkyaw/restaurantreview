@@ -221,7 +221,7 @@ $stmt->close();
                     <td>
                         <div class="d-flex align-items-center">
                             <?php if (!empty($restaurant['image'])): ?>
-                                <img src="../<?php echo $restaurant['image']; ?>" alt="<?php echo htmlspecialchars($restaurant['name']); ?>" class="rounded me-2" width="40" height="40" style="object-fit: cover;">
+                                <img src="../uploads/restaurants/<?php echo $restaurant['image']; ?>" alt="<?php echo htmlspecialchars($restaurant['name']); ?>" class="rounded me-2" width="40" height="40" style="object-fit: cover;">
                             <?php else: ?>
                                 <div class="d-flex align-items-center justify-content-center bg-primary text-white rounded me-2" style="width: 40px; height: 40px;">
                                     <i class="fas fa-utensils"></i>

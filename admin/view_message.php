@@ -128,7 +128,7 @@ include 'includes/header.php';
                             <a href="mailto:<?php echo htmlspecialchars($message['email']); ?>?subject=Re: <?php echo htmlspecialchars($message['subject']); ?>" class="btn btn-primary">
                                 <i class="fas fa-reply me-2"></i> Reply to Message
                             </a>
-                            <a href="contact_messages.php?action=delete&id=<?php echo $message['message_id']; ?>" class="btn btn-outline-danger" onclick="return confirm('Are you sure you want to delete this message?');">
+                            <a href="contact_messages.php?action=delete&id=<?php echo $message['message_id']; ?>" class="btn btn-outline-danger" data-confirm="Are you sure you want to delete this message?">
                                 <i class="fas fa-trash me-2"></i> Delete Message
                             </a>
                         </div>

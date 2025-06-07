@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
         
         if (in_array($ext, $allowed)) {
-            $target_dir = "../uploads/profiles/";
+            $target_dir = "../uploads/profile/";
             
             // Create directory if it doesn't exist
             if (!file_exists($target_dir)) {
@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $target_file = $target_dir . $new_filename;
             
             if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $target_file)) {
-                $profile_image = 'uploads/profiles/' . $new_filename;
+                $profile_image = $new_filename;
             } else {
                 $errors[] = "Failed to upload profile image.";
             }

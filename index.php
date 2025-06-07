@@ -265,7 +265,6 @@ session_start();
 
     <?php include 'includes/footer.php'; ?>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="assets/js/map-enhanced.js"></script>
     <script src="assets/js/home.js"></script>

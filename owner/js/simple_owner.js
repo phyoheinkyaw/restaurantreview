@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var testButton = document.getElementById('testButton');
     if (testButton) {
         testButton.addEventListener('click', function() {
-            alert('Button clicked from simple_owner.js!');
+            alertify.success('Button clicked from simple_owner.js!');
         });
     }
 });

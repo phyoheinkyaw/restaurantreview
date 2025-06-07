@@ -650,34 +650,17 @@ $avgRatings = calculateAverageRatings($restaurant_id);
             });
         });
 
-        // Function to show Bootstrap alerts
+        // Function to show Bootstrap alerts using AlertifyJS
         function showAlert(message, type = 'success') {
-            // Create alert container if it doesn't exist
-            let alertContainer = document.querySelector('.alert-container');
-            if (!alertContainer) {
-                alertContainer = document.createElement('div');
-                alertContainer.className = 'alert-container position-fixed top-0 end-0 p-3';
-                alertContainer.style.zIndex = "1050";
-                document.body.appendChild(alertContainer);
-            }
+            // Map Bootstrap alert types to Alertify notification types
+            const alertifyType = type === 'danger' ? 'error' : type;
             
-            // Create the alert
-            const alert = document.createElement('div');
-            alert.className = `alert alert-${type} alert-dismissible fade show`;
-            alert.innerHTML = `
-                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            `;
+            // Configure alertify defaults
+            alertify.set('notifier', 'position', 'top-right');
+            alertify.set('notifier', 'delay', 5);
             
-            // Add to container
-            alertContainer.appendChild(alert);
-            
-            // Auto dismiss after 5 seconds
-            setTimeout(() => {
-                alert.classList.remove('show');
-                setTimeout(() => alert.remove(), 150);
-            }, 5000);
+            // Show the notification
+            alertify.notify(message, alertifyType, 5);
         }
 
         // Handle file input and preview
@@ -762,13 +745,6 @@ $avgRatings = calculateAverageRatings($restaurant_id);
                 }
                 .photo-preview-item .remove-photo:hover {
                     background: #c82333;
-                }
-                .alert-container {
-                    max-width: 350px;
-                }
-                .alert-container .alert {
-                    margin-bottom: 1rem;
-                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
                 }
             `;
         document.head.appendChild(style);

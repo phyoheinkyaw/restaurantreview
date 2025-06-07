@@ -96,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!empty($image_path) && file_exists("../" . $image_path)) {
                     unlink("../" . $image_path);
                 }
-                $image_path = 'uploads/restaurants/' . $new_filename;
+                $image_path = $new_filename;
             } else {
                 $errors[] = "Failed to upload image.";
             }
@@ -115,7 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 WHERE restaurant_id = ?";
         
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("issssddsssssiiii", 
+        $stmt->bind_param("issssddsssssiiiii", 
             $owner_id, $name, $description, $cuisine_type, $address, 
             $latitude, $longitude, $phone, $email, $price_range, 
             $opening_hours_json, $image_path, $has_parking, $is_wheelchair_accessible, 

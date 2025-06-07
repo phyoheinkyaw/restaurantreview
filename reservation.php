@@ -329,8 +329,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     <?php include 'includes/footer.php'; ?>
     
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Flatpickr JS -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
@@ -464,7 +462,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         // Check file type
                         const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
                         if (!validTypes.includes(file.type)) {
-                            alert('Please select a valid image file (JPG, JPEG, or PNG).');
+                            alertify.error('Please select a valid image file (JPG, JPEG, or PNG).');
                             this.value = '';
                             previewContainer.classList.add('d-none');
                             return;
@@ -472,7 +470,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         
                         // Check file size (max 5MB)
                         if (file.size > 5 * 1024 * 1024) {
-                            alert('File is too large. Maximum size is 5MB.');
+                            alertify.error('File is too large. Maximum size is 5MB.');
                             this.value = '';
                             previewContainer.classList.add('d-none');
                             return;

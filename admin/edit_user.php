@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
         
         if (in_array($ext, $allowed)) {
-            $target_dir = "../uploads/profiles/";
+            $target_dir = "../uploads/profile/";
             
             // Create directory if it doesn't exist
             if (!file_exists($target_dir)) {
@@ -94,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!empty($profile_image) && file_exists("../" . $profile_image)) {
                     unlink("../" . $profile_image);
                 }
-                $profile_image = 'uploads/profiles/' . $new_filename;
+                $profile_image = $new_filename;
             } else {
                 $errors[] = "Failed to upload profile image.";
             }
@@ -263,7 +263,7 @@ $is_self = ($user_id == $_SESSION['user_id']);
                 <label for="profile_image" class="form-label">Profile Image</label>
                 <?php if (!empty($user['profile_image'])): ?>
                     <div class="mb-2">
-                        <img src="../<?php echo $user['profile_image']; ?>" alt="<?php echo htmlspecialchars($user['username']); ?>" class="img-thumbnail" style="max-height: 100px;">
+                        <img src="../uploads/profile/<?php echo $user['profile_image']; ?>" alt="<?php echo htmlspecialchars($user['username']); ?>" class="img-thumbnail" style="max-height: 100px;">
                     </div>
                 <?php endif; ?>
                 <input type="file" class="form-control" id="profile_image" name="profile_image">

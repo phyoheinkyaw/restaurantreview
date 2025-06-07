@@ -4,6 +4,20 @@ document.addEventListener('DOMContentLoaded', function() {
         $ = jQuery;
     }
 
+    // Configure AlertifyJS
+    if (typeof alertify !== 'undefined') {
+        // Set default settings
+        alertify.defaults.transition = "slide";
+        alertify.defaults.theme.ok = "btn btn-primary";
+        alertify.defaults.theme.cancel = "btn btn-danger";
+        alertify.defaults.theme.input = "form-control";
+        alertify.defaults.notifier.position = "top-right";
+        alertify.defaults.notifier.delay = 5;
+        alertify.defaults.glossary.title = "Confirm";
+        alertify.defaults.glossary.ok = "OK";
+        alertify.defaults.glossary.cancel = "Cancel";
+    }
+
     // Toggle sidebar
     const sidebarToggle = document.querySelector('.sidebar-toggle') || document.getElementById('sidebarToggle');
     const adminSidebar = document.querySelector('.admin-sidebar');
@@ -74,10 +88,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const confirmActions = document.querySelectorAll('[data-confirm]');
     confirmActions.forEach(action => {
         action.addEventListener('click', function(e) {
+            e.preventDefault();
             const message = this.getAttribute('data-confirm');
-            if (!confirm(message)) {
-                e.preventDefault();
-            }
+            const actionElement = this;
+            
+            alertify.confirm('Confirm Action', message, 
+                function() {
+                    // User clicked OK, continue with the action
+                    if (actionElement.tagName === 'A') {
+                        window.location.href = actionElement.href;
+                    } else if (actionElement.type === 'submit') {
+                        actionElement.form.submit();
+                    }
+                },
+                function() {
+                    // User clicked Cancel
+                }
+            );
         });
     });
     

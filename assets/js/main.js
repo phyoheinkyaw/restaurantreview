@@ -1,20 +1,17 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize any common functionality here
     
-    // Handle alerts without Alertify.js
+    // Handle alerts using Alertify.js
     function showAlert(message, type = 'success') {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show mt-3`;
-        alertDiv.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-        document.body.appendChild(alertDiv);
+        // Map Bootstrap alert types to Alertify notification types
+        const alertifyType = type === 'danger' ? 'error' : type;
         
-        // Remove alert after 5 seconds
-        setTimeout(() => {
-            alertDiv.remove();
-        }, 5000);
+        // Configure alertify defaults if not already configured
+        alertify.set('notifier','position', 'top-right');
+        alertify.set('notifier','delay', 5);
+        
+        // Show the notification
+        alertify.notify(message, alertifyType, 5);
     }
 
     // Export the function for use in other scripts

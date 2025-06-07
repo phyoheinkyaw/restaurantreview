@@ -333,11 +333,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 function(error) {
                     console.error('Error getting location:', error);
                     updateRecentActivity('Error finding your location');
-                    alert('Unable to get your location. Please check your permissions.');
+                    alertify.error('Unable to get your location. Please check your permissions.');
                 }
             );
         } else {
-            alert('Geolocation is not supported by your browser');
+            alertify.error('Geolocation is not supported by your browser');
         }
     });
     

@@ -96,8 +96,6 @@ $recent_verifications = $stmt->get_result();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- DataTables CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/admin.css">
     <style>
@@ -187,7 +185,7 @@ $recent_verifications = $stmt->get_result();
                                                     <div class="btn-group">
                                                         <a href="?action=verify&id=<?php echo $reservation['reservation_id']; ?>" 
                                                            class="btn btn-sm btn-success"
-                                                           onclick="return confirm('Are you sure you want to verify this deposit?');">
+                                                           data-confirm="Are you sure you want to verify this deposit?">
                                                             <i class="fas fa-check me-1"></i> Verify
                                                         </a>
                                                         <button type="button" 
@@ -303,16 +301,7 @@ $recent_verifications = $stmt->get_result();
         </div>
     </div>
     
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- DataTables JS -->
-    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
     <script>
-        // The DataTable initialization is now handled centrally in admin.js
-        
         $(document).ready(function() {
             // Handle image modal
             $('#imageModal').on('show.bs.modal', function (event) {

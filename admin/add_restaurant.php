@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $target_file = $target_dir . $new_filename;
             
             if (move_uploaded_file($_FILES['image']['tmp_name'], $target_file)) {
-                $image_path = 'uploads/restaurants/' . $new_filename;
+                $image_path = $new_filename;
             } else {
                 $errors[] = "Failed to upload image.";
             }
@@ -90,9 +90,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("issssddsssssiii", 
-            $owner_id, $name, $description, $cuisine_type, $address, $latitude, $longitude, 
-            $phone, $email, $price_range, $opening_hours_json, $image_path, $has_parking, 
+        $stmt->bind_param("issssddsssssiiii", 
+            $owner_id, $name, $description, $cuisine_type, $address, 
+            $latitude, $longitude, $phone, $email, $price_range, 
+            $opening_hours_json, $image_path, $has_parking, 
             $is_wheelchair_accessible, $has_wifi, $is_featured
         );
         

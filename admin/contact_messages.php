@@ -310,7 +310,7 @@ try {
                                                 <i class="fas fa-check"></i>
                                             </a>
                                             <?php endif; ?>
-                                            <a href="contact_messages.php?action=delete&id=<?php echo $message['message_id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this message?');">
+                                            <a href="contact_messages.php?action=delete&id=<?php echo $message['message_id']; ?>" class="btn btn-sm btn-outline-danger" data-confirm="Are you sure you want to delete this message?">
                                                 <i class="fas fa-trash"></i>
                                             </a>
                                         </div>

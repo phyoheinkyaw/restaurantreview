@@ -217,7 +217,7 @@ foreach ($users as $user) {
                     <td>
                         <div class="d-flex align-items-center">
                             <?php if (!empty($user['profile_image'])): ?>
-                                <img src="../<?php echo $user['profile_image']; ?>" alt="<?php echo htmlspecialchars($user['username']); ?>" class="rounded-circle me-2" width="40" height="40">
+                                <img src="../uploads/profile/<?php echo $user['profile_image']; ?>" alt="<?php echo htmlspecialchars($user['username']); ?>" class="rounded-circle me-2" width="40" height="40">
                             <?php else: ?>
                                 <div class="d-flex align-items-center justify-content-center bg-primary text-white rounded-circle me-2" style="width: 40px; height: 40px;">
                                     <?php echo strtoupper(substr($user['username'], 0, 1)); ?>
