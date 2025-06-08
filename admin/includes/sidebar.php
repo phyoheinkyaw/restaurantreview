@@ -18,7 +18,6 @@
                 <a href="restaurants.php" class="nav-link">
                     <i class="fas fa-store"></i>
                     <span>Restaurants</span>
-                    <span class="badge bg-primary rounded-pill ms-auto">12</span>
                 </a>
             </li>
             <li class="nav-item">
