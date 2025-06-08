@@ -1,4 +1,20 @@
-   <!-- Bootstrap 5 CSS -->
+<?php
+// Include currency handler at the very top
+require_once __DIR__ . '/currency_handler.php';
+
+// Default page title if not set
+if (!isset($pageTitle)) {
+    $pageTitle = 'Restaurant Review';
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo htmlspecialchars($pageTitle); ?> - Restaurant Review</title>
+    
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -12,6 +28,12 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/variables.css">
     <link rel="stylesheet" href="assets/css/style.css">
+    
+    <!-- Check if Swiper CSS is needed -->
+    <?php if (basename($_SERVER['PHP_SELF']) === 'restaurant.php'): ?>
+    <!-- Swiper CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <?php endif; ?>
     <!-- Google Translate CSS -->
     <style>
         /* Additional translation styles */
@@ -84,6 +106,7 @@
                             <option value="fr">Français</option>
                             <option value="de">Deutsch</option>
                             <option value="it">Italiano</option>
+                            <option value="mm">Myanmar</option>
                             <option value="zh-CN">中文</option>
                             <option value="ja">日本語</option>
                             <option value="ko">한국어</option>
@@ -92,10 +115,16 @@
                         </select>
                     </div>
                     <div class="currency-selector d-inline-block">
-                        <select class="form-select form-select-sm">
-                            <option value="USD">USD</option>
-                            <option value="EUR">EUR</option>
-                            <option value="GBP">GBP</option>
+                        <select class="form-select form-select-sm bg-dark text-light" id="currencySelector" aria-label="Currency selector">
+                            <?php foreach ($all_currencies as $currency): ?>
+                            <option value="<?php echo $currency['code']; ?>" <?php echo ($current_currency === $currency['code']) ? 'selected' : ''; ?>>
+                                <?php 
+                                $symbol = getCurrencySymbol($currency['code']);
+                                echo $currency['code']; 
+                                if ($symbol !== $currency['code']) echo " ({$symbol})";
+                                ?>
+                            </option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                 </div>
@@ -159,3 +188,5 @@
             </div>
         </div>
     </nav>
+</body>
+</html>

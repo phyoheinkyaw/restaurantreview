@@ -10,7 +10,8 @@ const availableLanguages = {
     'es': 'Spanish',
     'fr': 'French',
     'de': 'German',
-    'it': 'Italian'
+    'it': 'Italian',
+    'mm': 'Myanmar'
 };
 
 // Translation dictionaries
@@ -199,6 +200,43 @@ const translations = {
         mexicanRestaurants: "Ristoranti messicani",
         indianRestaurants: "Ristoranti indiani",
         officeHours: "Orari d'ufficio"
+    },
+    mm: {
+        home: "ပင်မစာမျက်နှာ",
+        search: "ရှာဖွေရန်",
+        about: "ကျွန်ုပ်တို့အကြောင်း",
+        contact: "ဆက်သွယ်ရန်",
+        login: "လော့ဂ်အင်",
+        signup: "အကောင့်ဖွင့်ရန်",
+        myAccount: "ကျွန်ုပ်အကောင့်",
+        profile: "ကျွန်ုပ်ရဲ့ပုံမှန်",
+        reservations: "ကျွန်ုပ်ရဲ့ကိုင်သင်္ကျားများ",
+        reviews: "ကျွန်ုပ်ရဲ့အကြောင်းပြုချက်များ",
+        logout: "အကောင့်မှထွက်ရန်",
+        getInTouch: "ကျွန်ုပ်တို့ကိုယ်တိုင်ကိုယ်တိုင်ဆက်သွယ်ရန်",
+        fullName: "အကောင့်အကျဉ်းအမည်",
+        email: "အီးမေးလ်အမှတ်",
+        subject: "ခေါင်းစဉ်",
+        message: "မှတ်ချက်",
+        send: "မှတ်ချက်တင်ရန်",
+        address: "လိပ်စာ",
+        phone: "ဖုန်းနံပါတ်",
+        follow: "ကျွန်ုပ်တို့ကိုစားပေးရန်",
+        language: "ဘာသာစကား",
+        currency: "ငွေကိုင်",
+        restaurantReview: "ကျွန်ုပ်တို့အကြောင်းပြုချက်များ",
+        quickLinks: "အကြောင်းအရာများ",
+        aboutUs: "ကျွန်ုပ်တို့အကြောင်း",
+        termsOfService: "ကျွန်ုပ်တို့အကြောင်းပြုချက်များ",
+        privacyPolicy: "ကျွန်ုပ်တို့အကြောင်းပြုချက်များ",
+        newsletter: "ကျွန်ုပ်တို့အကြောင်းပြုချက်များ",
+        subscribe: "ကျွန်ုပ်တို့အကြောင်းပြုချက်များ",
+        popularCategories: "ကျွန်ုပ်တို့အကြောင်းပြုချက်များ",
+        italianRestaurants: "အီတလီအကြောင်းပြုချက်များ",
+        japaneseRestaurants: "ဂျပန်အကြောင်းပြုချက်များ",
+        mexicanRestaurants: "မက်ကီကန်အကြောင်းပြုချက်များ",
+        indianRestaurants: "အင်ဒီအကြောင်းပြုချက်များ",
+        officeHours: "အကြောင်းပြုချက်များ"
     }
 };
 

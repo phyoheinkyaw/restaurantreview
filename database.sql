@@ -310,18 +310,18 @@ INSERT INTO languages (code, name, is_active) VALUES
 ('ar', 'Arabic', true),
 ('hi', 'Hindi', true);
 
--- Insert sample currency rates
-INSERT INTO currency_rates (code, name, rate, last_updated) VALUES
-('USD', 'US Dollar', 1.000000, CURRENT_TIMESTAMP),
-('EUR', 'Euro', 0.850000, CURRENT_TIMESTAMP),
-('GBP', 'British Pound', 0.730000, CURRENT_TIMESTAMP),
-('JPY', 'Japanese Yen', 110.500000, CURRENT_TIMESTAMP),
-('CAD', 'Canadian Dollar', 1.250000, CURRENT_TIMESTAMP),
-('AUD', 'Australian Dollar', 1.350000, CURRENT_TIMESTAMP),
-('CNY', 'Chinese Yuan', 6.450000, CURRENT_TIMESTAMP),
-('INR', 'Indian Rupee', 74.500000, CURRENT_TIMESTAMP),
-('MXN', 'Mexican Peso', 20.150000, CURRENT_TIMESTAMP),
-('SGD', 'Singapore Dollar', 1.350000, CURRENT_TIMESTAMP);
+-- Insert initial currency data
+INSERT INTO currency_rates (code, name, rate) VALUES
+('USD', 'US Dollar', 1.0),
+('EUR', 'Euro', 0.85),
+('GBP', 'British Pound', 0.74),
+('JPY', 'Japanese Yen', 115.0),
+('CAD', 'Canadian Dollar', 1.25),
+('AUD', 'Australian Dollar', 1.36),
+('CNY', 'Chinese Yuan', 6.36),
+('INR', 'Indian Rupee', 74.5),
+('MXN', 'Mexican Peso', 20.45),
+('SGD', 'Singapore Dollar', 1.35);
 
 -- Insert additional restaurant for testing
 INSERT INTO restaurants (owner_id, name, description, cuisine_type, address, latitude, longitude, phone, email, website, price_range, opening_hours) VALUES

@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Database configuration
 define('DB_HOST', 'localhost');
@@ -27,3 +29,5 @@ define('POINTS_TO_DISCOUNT_RATIO', 20); // 20 points = $1
 // Error reporting
 error_reporting(E_ALL);
 ini_set('display_errors', 1); 
+
+// Currency symbols are now defined in includes/currency.php 

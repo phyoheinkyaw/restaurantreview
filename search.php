@@ -1,7 +1,9 @@
 <?php
+// Include required files first
 require_once 'includes/config.php';
 require_once 'includes/db.php';
 require_once 'includes/functions.php';
+require_once 'includes/currency.php';
 
 // Get search parameters
 $search = isset($_GET['search']) ? sanitize($_GET['search']) : '';
@@ -131,8 +133,333 @@ try {
     error_log("Error fetching cuisine types: " . $e->getMessage());
     $cuisine_types = [];
 }
+
+// Set page title
+$pageTitle = "Search Restaurants";
 ?>
 
+<style>
+    #map {
+        height: 96vh;
+        width: 95%;
+        position: sticky;
+        bottom: 0;
+        border-radius: 12px;
+        margin: 0 auto;
+        display: block;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    .map-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        padding: 1rem;
+    }
+    .restaurant-card {
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-bottom: 1.5rem;
+    }
+    .restaurant-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    .restaurant-card.active {
+        border-left: 4px solid var(--primary);
+    }
+    .content-wrapper {
+        height: 100vh;
+        overflow-y: auto;
+        padding: 1rem;
+        scrollbar-width: thin;
+        max-height: 100vh;
+    }
+    .content-wrapper::-webkit-scrollbar {
+        width: 8px;
+    }
+    .content-wrapper::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    .content-wrapper::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 10px;
+    }
+    .content-wrapper::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+    .filter-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    /* Enhanced form elements */
+    .form-control, .form-select {
+        border-radius: 8px;
+        padding: 10px 15px;
+        border-color: #e0e0e0;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    }
+    
+    #nearMeBtn {
+        border-top-right-radius: 8px;
+        border-bottom-right-radius: 8px;
+    }
+    
+    .btn-group .btn:first-child {
+        border-top-left-radius: 8px;
+        border-bottom-left-radius: 8px;
+    }
+    
+    .btn-group .btn:last-child {
+        border-top-right-radius: 8px;
+        border-bottom-right-radius: 8px;
+    }
+    
+    #priceRangeButtons .btn, [data-rating].btn {
+        font-weight: 600;
+        padding: 10px 0;
+    }
+    
+    /* Star rating buttons */
+    [data-rating].btn {
+        color: #664d03;
+    }
+    
+    [data-rating].btn-outline-warning {
+        color: #664d03;
+    }
+    
+    [data-rating].btn-warning {
+        background-color: #ffc107;
+        border-color: #ffc107;
+        color: #664d03;
+    }
+    
+    /* Search card styling */
+    .card {
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        overflow: hidden;
+        border: none;
+    }
+    
+    .card-body {
+        padding: 1.5rem;
+    }
+    
+    .card-title {
+        font-weight: 700;
+        font-size: 1.25rem;
+        color: #333;
+    }
+    
+    .results-heading {
+        position: relative;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        color: #333;
+    }
+    
+    .results-heading::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 80px;
+        height: 3px;
+        background-color: var(--primary);
+        border-radius: 3px;
+    }
+    
+    /* Distance badge */
+    .distance-badge {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 1;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        background-color: rgba(0,0,0,0.7);
+        color: white;
+        backdrop-filter: blur(4px);
+    }
+    
+    /* Enhanced map pins */
+    /* We are now using standard Leaflet markers with custom colors */
+    
+    /* Enhanced map popup styles */
+    .restaurant-popup .leaflet-popup-content-wrapper {
+        padding: 0;
+        overflow: hidden;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    
+    .restaurant-popup .leaflet-popup-content {
+        margin: 0;
+        min-width: 300px;
+        overflow: hidden;
+    }
+    
+    .restaurant-popup .leaflet-popup-tip {
+        background: white;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+    
+    /* Ensure popup is properly positioned */
+    .leaflet-popup {
+        margin-bottom: 5px !important;
+    }
+    
+    .restaurant-popup .leaflet-popup-tip-container {
+        height: 10px !important;
+    }
+    
+    /* Map popup styles from homepage */
+    .marker-popup {
+        min-width: 300px;
+        padding: 0;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    .marker-popup-header {
+        padding: 15px;
+        background-color: var(--light-color);
+        border-bottom: 1px solid rgba(0,0,0,0.08);
+        position: relative;
+    }
+    
+    .marker-popup-body {
+        padding: 15px;
+    }
+    
+    .marker-popup-badge {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        font-weight: 500;
+    }
+    
+    .marker-image {
+        width: 100%;
+        height: 140px;
+        object-fit: cover !important;
+        display: block;
+        border-radius: 8px 8px 0 0;
+    }
+    
+    .marker-actions {
+        margin-top: 15px;
+        display: flex;
+        gap: 10px;
+    }
+    
+    .marker-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+        border-bottom: 1px dashed rgba(0,0,0,0.05);
+    }
+    
+    .marker-info:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+    
+    .marker-info i {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        margin-right: 10px;
+        font-size: 12px;
+    }
+    
+    .marker-info.cuisine i {
+        background-color: rgba(23, 162, 184, 0.15);
+        color: var(--info-color);
+    }
+    
+    .marker-info.price i {
+        background-color: rgba(40, 167, 69, 0.15);
+        color: var(--success-color);
+    }
+    
+    .marker-info.address i {
+        background-color: rgba(255, 193, 7, 0.15);
+        color: var(--warning-color);
+    }
+    
+    .marker-info.phone i {
+        background-color: rgba(0, 123, 255, 0.15);
+        color: var(--primary-color);
+    }
+    
+    .restaurant-popup .leaflet-popup-close-button {
+        z-index: 1000;
+        color: #fff;
+        opacity: 0.8;
+        background: rgba(0,0,0,0.4);
+        border-radius: 50%;
+        width: 26px;
+        height: 26px;
+        font-size: 20px;
+        padding: 0;
+        line-height: 26px;
+        text-align: center;
+        top: 8px;
+        right: 8px;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    
+    .restaurant-popup .leaflet-popup-close-button:hover {
+        opacity: 1;
+        background: rgba(0,0,0,0.6);
+        transform: scale(1.1);
+    }
+    
+    .marker-actions .btn {
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-weight: 500;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+    
+    .marker-actions .btn-primary,
+    .marker-actions .btn-success {
+        color: white;
+        border: none;
+        background-image: linear-gradient(to right, #3a7bd5, #00d2ff);
+        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
+    }
+    
+    .marker-actions .btn-primary:hover,
+    .marker-actions .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 7px 15px rgba(0, 123, 255, 0.45);
+    }
+    
+    .marker-actions .btn-success {
+        background-image: linear-gradient(to right, #2ecc71, #27ae60);
 <!DOCTYPE html>
 <html lang="en">
 <head>

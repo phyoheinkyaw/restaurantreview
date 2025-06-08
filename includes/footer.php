@@ -96,6 +96,8 @@
 </script>
 <!-- Custom JS -->
 <script src="assets/js/main.js"></script>
+<!-- Currency Conversion JS -->
+<script src="assets/js/currency.js"></script>
 
 <!-- Check for past reservations and update their status -->
 <?php if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'user'): ?>

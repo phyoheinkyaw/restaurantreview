@@ -114,6 +114,12 @@
                     ?>
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="currencies.php" class="nav-link">
+                    <i class="fas fa-dollar-sign"></i>
+                    <span>Currency Management</span>
+                </a>
+            </li>
             <!-- <li class="nav-item">
                 <a href="settings.php" class="nav-link">
                     <i class="fas fa-cog"></i>
